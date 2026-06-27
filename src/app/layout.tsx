@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { AuthGate } from "@/components/AuthGate";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 
 const figtree = Figtree({
@@ -44,7 +45,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={figtree.variable}>
       <body className="font-sans antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          <AuthGate>{children}</AuthGate>
+        </Providers>
         <ServiceWorkerRegistrar />
       </body>
     </html>
