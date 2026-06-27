@@ -7,8 +7,16 @@ export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("serviceWorker" in navigator)) return;
-    // Only register in production builds; the dev server's assets aren't cached.
-    if (process.env.NODE_ENV !== "production") return;
+
+    // In dev, actively remove any service worker left over from a previous
+    // production run — a stale SW serves cached JS and silently masks new code.
+    if (process.env.NODE_ENV !== "production") {
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((regs) => regs.forEach((r) => r.unregister()))
+        .catch(() => {});
+      return;
+    }
 
     const onLoad = () => {
       navigator.serviceWorker.register("/sw.js").catch(() => {
