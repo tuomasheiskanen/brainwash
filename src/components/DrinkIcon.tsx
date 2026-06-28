@@ -69,7 +69,7 @@ export function DrinkIcon({
         type="button"
         onClick={onInc}
         aria-label={`Add one ${label}`}
-        className="relative flex aspect-square w-full items-center justify-center rounded-2xl"
+        className="relative mx-auto flex aspect-square w-full max-w-[78px] items-center justify-center rounded-2xl"
         style={
           has
             ? { background: "#f0fdfa", boxShadow: "inset 0 0 0 2px #14b8a6" }
