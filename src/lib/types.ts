@@ -1,5 +1,5 @@
-/** The four loggable drink types. */
-export type DrinkKey = "can" | "pint" | "wine" | "winePlus";
+/** The loggable drink types. */
+export type DrinkKey = "can" | "canIV" | "pint" | "wine" | "winePlus";
 
 export type Drinks = Record<DrinkKey, number>;
 
@@ -20,7 +20,7 @@ export interface DayEntry {
 }
 
 export function emptyDrinks(): Drinks {
-  return { can: 0, pint: 0, wine: 0, winePlus: 0 };
+  return { can: 0, canIV: 0, pint: 0, wine: 0, winePlus: 0 };
 }
 
 export function emptyEntry(date: string): DayEntry {

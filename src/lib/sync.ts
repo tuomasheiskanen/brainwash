@@ -105,7 +105,7 @@ function storedFromRow(row: RemoteRow): StoredDay {
     mood: row.mood ?? null,
     moodTags: row.mood_tags ?? [],
     note: row.note ?? "",
-    drinks: row.drinks ?? emptyDrinks(),
+    drinks: { ...emptyDrinks(), ...(row.drinks ?? {}) },
     sleepHours: row.sleep_hours ?? null,
     sleepQuality: row.sleep_quality ?? null,
     updatedAt: new Date(row.updated_at).getTime(),

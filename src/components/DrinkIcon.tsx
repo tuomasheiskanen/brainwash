@@ -6,6 +6,7 @@ import type { DrinkKey } from "@/lib/types";
 function Glyph({ kind, stroke }: { kind: DrinkKey; stroke: string }) {
   switch (kind) {
     case "can":
+    case "canIV":
       return (
         <svg width="22" height="30" viewBox="0 0 22 30" fill="none" stroke={stroke} strokeWidth={1.8}>
           <rect x="4" y="4" width="14" height="23" rx="3" />
@@ -92,11 +93,11 @@ export function DrinkIcon({
                   onDec();
                 }
               }}
-              className="absolute -left-[7px] -top-[7px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-bold text-faint shadow-pop"
+              className="absolute -top-[7px] left-0 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white text-[14px] font-bold text-faint shadow-pop"
             >
               −
             </span>
-            <span className="absolute -right-[7px] -top-[7px] flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-[5px] text-[11px] font-bold text-white">
+            <span className="absolute -top-[7px] right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-[5px] text-[11px] font-bold text-white">
               {count}
             </span>
           </>
