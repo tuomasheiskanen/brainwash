@@ -7,7 +7,8 @@ import type { DrinkKey, Drinks } from "./types";
  *
  *   Small can, III beer (330 ml) = 1.0 units
  *   Small can, IV beer  (330 ml) = 1.2 units
- *   Pint (500 ml)                = 1.5 units
+ *   Pint, III beer (500 ml)      = 1.5 units
+ *   Pint, IV beer  (500 ml)      = 1.8 units
  *   Wine glass (120 ml)          = 1.0 units
  *   Wine larger pour (160 ml)    = 1.3 units
  */
@@ -21,7 +22,8 @@ export interface DrinkConfig {
 export const DRINKS: DrinkConfig[] = [
   { key: "can", label: "III", volume: "330ml", unitsPerServing: 1.0 },
   { key: "canIV", label: "IV", volume: "330ml", unitsPerServing: 1.2 },
-  { key: "pint", label: "Pint", volume: "500ml", unitsPerServing: 1.5 },
+  { key: "pint", label: "III", volume: "500ml", unitsPerServing: 1.5 },
+  { key: "pintIV", label: "IV", volume: "500ml", unitsPerServing: 1.8 },
   { key: "wine", label: "Wine", volume: "120ml", unitsPerServing: 1.0 },
   { key: "winePlus", label: "Wine+", volume: "160ml", unitsPerServing: 1.3 },
 ];

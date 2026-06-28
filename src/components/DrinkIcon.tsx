@@ -15,6 +15,7 @@ function Glyph({ kind, stroke }: { kind: DrinkKey; stroke: string }) {
         </svg>
       );
     case "pint":
+    case "pintIV":
       return (
         <svg width="24" height="30" viewBox="0 0 24 30" fill="none" stroke={stroke} strokeWidth={1.8}>
           <path d="M6 4 L7.5 27 H16.5 L18 4 Z" />
