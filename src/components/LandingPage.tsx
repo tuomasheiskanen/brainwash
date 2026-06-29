@@ -34,7 +34,7 @@ export function LandingPage() {
             🌿
           </div>
           <h1 className="text-[26px] font-extrabold tracking-[-0.02em] text-ink">
-            Daily
+            Brainwash
           </h1>
           <p className="mt-1.5 text-[14px] font-medium text-subtle">
             A calm, private log for mood, alcohol, and sleep.

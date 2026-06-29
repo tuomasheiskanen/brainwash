@@ -13,14 +13,14 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "Daily — calm health log",
+  title: "Brainwash — calm health log",
   description:
     "A calm, private daily log for mood, alcohol, and sleep. Works offline.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Daily",
+    title: "Brainwash",
   },
   icons: {
     icon: "/icons/icon-192.png",

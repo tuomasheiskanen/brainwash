@@ -1,6 +1,6 @@
 {
-  "name": "Daily — calm health log",
-  "short_name": "Daily",
+  "name": "Brainwash — calm health log",
+  "short_name": "Brainwash",
   "description": "A calm, private daily log for mood, alcohol, and sleep. Works offline.",
   "start_url": "/",
   "scope": "/",
