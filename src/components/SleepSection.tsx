@@ -20,7 +20,7 @@ export function SleepSection({
   const clamp = (h: number) => Math.min(SLEEP.max, Math.max(SLEEP.min, h));
 
   return (
-    <Card className="px-4 pb-4 pt-[18px]">
+    <Card className="mb-[14px] px-4 pb-4 pt-[18px]">
       <div className="mx-1 mb-[14px] text-[13px] font-bold text-body">Sleep</div>
 
       {/* Duration stepper */}

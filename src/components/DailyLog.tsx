@@ -57,6 +57,13 @@ export function DailyLog() {
         onNext={() => setDate((d) => addDays(d, 1))}
       />
 
+      <SleepSection
+        hours={entry.sleepHours}
+        quality={entry.sleepQuality}
+        onHours={(h) => update({ sleepHours: h })}
+        onQuality={setQuality}
+      />
+
       <MoodSection
         mood={entry.mood}
         tags={entry.moodTags}
@@ -67,13 +74,6 @@ export function DailyLog() {
       />
 
       <AlcoholSection drinks={entry.drinks} onInc={incDrink} onDec={decDrink} />
-
-      <SleepSection
-        hours={entry.sleepHours}
-        quality={entry.sleepQuality}
-        onHours={(h) => update({ sleepHours: h })}
-        onQuality={setQuality}
-      />
     </div>
   );
 }

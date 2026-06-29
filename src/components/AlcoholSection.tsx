@@ -22,7 +22,7 @@ export function AlcoholSection({
   const summary = `${servings} ${servings === 1 ? "drink" : "drinks"} · ≈ ${units.toFixed(1)} units`;
 
   return (
-    <Card className="mb-[14px] px-4 pb-[14px] pt-[18px]">
+    <Card className="px-4 pb-[14px] pt-[18px]">
       <div className="mx-1 mb-[14px] flex items-baseline justify-between">
         <div className="text-[13px] font-bold text-body">Alcohol</div>
         {alcoholFree ? (
@@ -32,7 +32,7 @@ export function AlcoholSection({
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-x-2 gap-y-4">
+      <div className="grid grid-cols-[78px_78px] justify-center gap-x-3 gap-y-4">
         {DRINKS.map((d) => (
           <DrinkIcon
             key={d.key}
