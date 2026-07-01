@@ -74,6 +74,7 @@ interface Bar {
   iso?: string; // present (and clickable) in the week view
   isToday?: boolean;
   future?: boolean;
+  trend?: number | null; // 7-day rolling average anchored on this day (week view)
 }
 
 export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
@@ -98,6 +99,18 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     d.setDate(1);
     d.setMonth(d.getMonth() + delta);
     setAnchor(toISODate(d));
+  };
+
+  // 7-day rolling average of the metric ending on `endISO` (trailing window,
+  // tracked days only). Uses data outside the visible window when needed.
+  const trailingAvg = (endISO: string): number | null => {
+    const vals: number[] = [];
+    for (let k = 0; k < 7; k++) {
+      const e = entries.get(addDays(endISO, -k));
+      const v = e ? metric.value(e) : null;
+      if (v !== null) vals.push(v);
+    }
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   };
 
   // Tracked days (with a value for this metric) in the visible range — used for
@@ -126,6 +139,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         iso,
         isToday: iso === today,
         future: iso > today,
+        trend: trailingAvg(iso),
       };
     });
     caption = formatShortRange(isos[0], isos[6]);
@@ -164,13 +178,24 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     metric.scaleMax ??
     Math.max(1, ...bars.map((b) => (b.value === null ? 0 : b.value)));
 
-  // Mean of the visible bars, drawn as a reference line across the chart.
+  // Mean of the visible bars — the flat reference line used in the month view.
   const chartVals = bars.filter((b) => b.value !== null).map((b) => b.value!);
   const avgValue = chartVals.length
     ? chartVals.reduce((a, b) => a + b, 0) / chartVals.length
     : null;
   const avgPct =
     avgValue !== null ? Math.min(100, (avgValue / scaleMax) * 100) : null;
+
+  // Week view: a point per day at its 7-day rolling average (% from the bottom).
+  const trendPts = bars.map((b, i) =>
+    b.trend == null
+      ? null
+      : { x: ((i + 0.5) / bars.length) * 100, frac: Math.min(100, (b.trend / scaleMax) * 100) }
+  );
+  const trendLine = trendPts
+    .filter((p): p is { x: number; frac: number } => p !== null)
+    .map((p) => `${p.x},${100 - p.frac}`)
+    .join(" ");
 
   const summary = summarize(metric, range, rangeValues, freeDays);
   const navPrev = () => (range === "week" ? shiftWeek(-1) : shiftMonth(-1));
@@ -256,26 +281,61 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         </button>
       </div>
 
-      {/* Bars, with a dashed average reference line across them */}
+      {/* Bars, overlaid with a rolling-average line (week) or a flat mean line
+          (month). */}
       <div className="relative flex h-32 items-end gap-2 px-0.5">
-        {avgPct !== null && (
-          <div
-            className="pointer-events-none absolute inset-x-0.5 z-10"
-            style={{ bottom: `${avgPct}%` }}
-          >
-            <div
-              className="relative border-t border-dashed"
-              style={{ borderColor: "#0f766e" }}
-            >
-              <span
-                className="absolute right-0 -top-[9px] rounded bg-white/85 px-1 text-[9px] font-bold"
-                style={{ color: "#0f766e" }}
+        {range === "week"
+          ? trendLine && (
+              <>
+                <svg
+                  className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <polyline
+                    points={trendLine}
+                    fill="none"
+                    stroke="#0f766e"
+                    strokeWidth={1.5}
+                    vectorEffect="non-scaling-stroke"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {trendPts.map((p, i) =>
+                  p ? (
+                    <div
+                      key={`pt-${i}`}
+                      className="pointer-events-none absolute z-20 h-1.5 w-1.5 rounded-full"
+                      style={{
+                        left: `${p.x}%`,
+                        bottom: `${p.frac}%`,
+                        transform: "translate(-50%, 50%)",
+                        background: "#0f766e",
+                      }}
+                    />
+                  ) : null
+                )}
+              </>
+            )
+          : avgPct !== null && (
+              <div
+                className="pointer-events-none absolute inset-x-0.5 z-10"
+                style={{ bottom: `${avgPct}%` }}
               >
-                avg {avgValue!.toFixed(1)}
-              </span>
-            </div>
-          </div>
-        )}
+                <div
+                  className="relative border-t border-dashed"
+                  style={{ borderColor: "#0f766e" }}
+                >
+                  <span
+                    className="absolute right-0 -top-[9px] rounded bg-white/85 px-1 text-[9px] font-bold"
+                    style={{ color: "#0f766e" }}
+                  >
+                    avg {avgValue!.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            )}
         {bars.map((bar, i) => {
           const present = bar.value !== null;
           const isFree = metric.key === "alcohol" && bar.value === 0;
@@ -332,6 +392,17 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
           </div>
         ))}
       </div>
+
+      {/* Legend for the rolling-average line */}
+      {range === "week" && trendLine && (
+        <div className="mt-2 flex items-center justify-center gap-1.5 text-[9.5px] font-semibold text-faint">
+          <span
+            className="inline-block h-[2px] w-4 rounded-full"
+            style={{ background: "#0f766e" }}
+          />
+          7-day rolling average
+        </div>
+      )}
 
       {/* Summary stat */}
       <div className="mt-[14px] flex items-center gap-2.5 rounded-[14px] bg-accent-tint px-[14px] py-3">
