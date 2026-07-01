@@ -164,6 +164,14 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     metric.scaleMax ??
     Math.max(1, ...bars.map((b) => (b.value === null ? 0 : b.value)));
 
+  // Mean of the visible bars, drawn as a reference line across the chart.
+  const chartVals = bars.filter((b) => b.value !== null).map((b) => b.value!);
+  const avgValue = chartVals.length
+    ? chartVals.reduce((a, b) => a + b, 0) / chartVals.length
+    : null;
+  const avgPct =
+    avgValue !== null ? Math.min(100, (avgValue / scaleMax) * 100) : null;
+
   const summary = summarize(metric, range, rangeValues, freeDays);
   const navPrev = () => (range === "week" ? shiftWeek(-1) : shiftMonth(-1));
   const navNext = () => (range === "week" ? shiftWeek(1) : shiftMonth(1));
@@ -248,8 +256,26 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         </button>
       </div>
 
-      {/* Bars */}
-      <div className="flex h-32 items-end gap-2 px-0.5">
+      {/* Bars, with a dashed average reference line across them */}
+      <div className="relative flex h-32 items-end gap-2 px-0.5">
+        {avgPct !== null && (
+          <div
+            className="pointer-events-none absolute inset-x-0.5 z-10"
+            style={{ bottom: `${avgPct}%` }}
+          >
+            <div
+              className="relative border-t border-dashed"
+              style={{ borderColor: "#0f766e" }}
+            >
+              <span
+                className="absolute right-0 -top-[9px] rounded bg-white/85 px-1 text-[9px] font-bold"
+                style={{ color: "#0f766e" }}
+              >
+                avg {avgValue!.toFixed(1)}
+              </span>
+            </div>
+          </div>
+        )}
         {bars.map((bar, i) => {
           const present = bar.value !== null;
           const isFree = metric.key === "alcohol" && bar.value === 0;
@@ -257,59 +283,54 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
             ? Math.max(6, Math.round((bar.value! / scaleMax) * 100))
             : 0;
 
-          const fill = (
-            <div className="flex w-full flex-1 items-end justify-center">
-              {isFree ? (
-                <div className="pb-0.5 text-[13px]">🌿</div>
-              ) : present ? (
-                <div
-                  className="w-[62%] max-w-[22px] rounded-md"
-                  style={{
-                    height: `${hPct}%`,
-                    background: bar.isToday ? "#0f766e" : "#14b8a6",
-                  }}
-                />
-              ) : null}
-            </div>
-          );
-
-          const label = (
+          const inner = isFree ? (
+            <div className="pb-0.5 text-[13px]">🌿</div>
+          ) : present ? (
             <div
-              className="text-[10px] font-semibold"
-              style={{ color: bar.isToday ? "#0f766e" : "#b6bcc4" }}
-            >
-              {bar.label}
-            </div>
-          );
+              className="w-[62%] max-w-[22px] rounded-md"
+              style={{
+                height: `${hPct}%`,
+                background: bar.isToday ? "#0f766e" : "#14b8a6",
+              }}
+            />
+          ) : null;
 
           const clickable = range === "week" && bar.iso && !bar.future;
+          const cls = "flex h-full flex-1 items-end justify-center";
 
-          if (clickable) {
-            return (
-              <button
-                type="button"
-                key={i}
-                onClick={() => router.push(`/?date=${bar.iso}`)}
-                aria-label={`View ${bar.iso}`}
-                className="flex h-full flex-1 flex-col items-center justify-end gap-[7px]"
-              >
-                {fill}
-                {label}
-              </button>
-            );
-          }
-
-          return (
+          return clickable ? (
+            <button
+              type="button"
+              key={i}
+              onClick={() => router.push(`/?date=${bar.iso}`)}
+              aria-label={`View ${bar.iso}`}
+              className={cls}
+            >
+              {inner}
+            </button>
+          ) : (
             <div
               key={i}
-              className="flex h-full flex-1 flex-col items-center justify-end gap-[7px]"
+              className={cls}
               style={{ opacity: bar.future ? 0.5 : 1 }}
             >
-              {fill}
-              {label}
+              {inner}
             </div>
           );
         })}
+      </div>
+
+      {/* Bar labels */}
+      <div className="mt-[7px] flex gap-2 px-0.5">
+        {bars.map((bar, i) => (
+          <div
+            key={i}
+            className="flex-1 text-center text-[10px] font-semibold"
+            style={{ color: bar.isToday ? "#0f766e" : "#b6bcc4" }}
+          >
+            {bar.label}
+          </div>
+        ))}
       </div>
 
       {/* Summary stat */}
