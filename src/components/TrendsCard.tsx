@@ -10,8 +10,6 @@ import {
   fromISODate,
   todayISO,
   toISODate,
-  WEEKDAY_INITIALS,
-  weekDates,
 } from "@/lib/date";
 import type { DayEntry } from "@/lib/types";
 import { Card } from "./Card";
@@ -66,6 +64,10 @@ const METRICS: Metric[] = [
   },
 ];
 
+// Weekday initials indexed by Date.getDay() (0 = Sunday). The week view is a
+// rolling 7-day window, so labels follow each date's real weekday.
+const DOW_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
+
 interface Bar {
   label: string;
   value: number | null;
@@ -89,6 +91,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
   const year = anchorDate.getFullYear();
   const month0 = anchorDate.getMonth();
 
+  // In week view the anchor is the last day of the rolling 7-day window.
   const shiftWeek = (delta: number) => setAnchor((a) => addDays(a, delta * 7));
   const shiftMonth = (delta: number) => {
     const d = fromISODate(anchor);
@@ -107,8 +110,10 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
   let atLatest: boolean; // hide "next" once we reach the current week/month
 
   if (range === "week") {
-    const isos = weekDates(anchor);
-    bars = isos.map((iso, i) => {
+    // Rolling window: the 7 days ending on the anchor (today by default),
+    // oldest → newest, so the rightmost bar is the anchor day.
+    const isos = Array.from({ length: 7 }, (_, i) => addDays(anchor, i - 6));
+    bars = isos.map((iso) => {
       const e = entries.get(iso);
       const v = e ? metric.value(e) : null;
       if (v !== null) {
@@ -116,15 +121,15 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         if (v === 0) freeDays++;
       }
       return {
-        label: WEEKDAY_INITIALS[i],
+        label: DOW_INITIALS[fromISODate(iso).getDay()],
         value: v,
         iso,
         isToday: iso === today,
         future: iso > today,
       };
     });
-    caption = `${formatShortRange(isos[0], isos[6])}`;
-    atLatest = isos[6] >= today;
+    caption = formatShortRange(isos[0], isos[6]);
+    atLatest = anchor >= today;
   } else {
     const daysInMonth = new Date(year, month0 + 1, 0).getDate();
     bars = [];
@@ -324,7 +329,7 @@ function summarize(
   values: number[],
   freeDays: number
 ): { icon: string; text: string } {
-  const span = range === "week" ? "this week" : "this month";
+  const span = range === "week" ? "in the past week" : "this month";
   if (values.length === 0) {
     return { icon: "🌿", text: `No ${metric.label.toLowerCase()} logged ${span}` };
   }

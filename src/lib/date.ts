@@ -89,13 +89,3 @@ export function formatShortRange(startISO: string, endISO: string): string {
   if (sm === em) return `${sm} ${s.getDate()}–${e.getDate()}`;
   return `${sm} ${s.getDate()} – ${em} ${e.getDate()}`;
 }
-
-/** The Monday→Sunday ISO dates of the week containing `iso`. */
-export function weekDates(iso: string): string[] {
-  const d = fromISODate(iso);
-  const offsetToMonday = (d.getDay() + 6) % 7;
-  const monday = addDays(iso, -offsetToMonday);
-  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-}
-
-export const WEEKDAY_INITIALS = ["M", "T", "W", "T", "F", "S", "S"];
