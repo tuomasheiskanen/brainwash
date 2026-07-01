@@ -90,31 +90,6 @@ export function formatShortRange(startISO: string, endISO: string): string {
   return `${sm} ${s.getDate()} – ${em} ${e.getDate()}`;
 }
 
-export interface CalendarCell {
-  iso: string;
-  day: number;
-}
-
-/**
- * Build the day cells for a month, with leading blanks so the grid starts on
- * Monday (design uses a Mon–Sun week).
- */
-export function monthGrid(
-  year: number,
-  month0: number
-): (CalendarCell | null)[] {
-  const first = new Date(year, month0, 1);
-  // JS getDay: 0=Sun..6=Sat. We want Monday-first, so Mon=0..Sun=6.
-  const leading = (first.getDay() + 6) % 7;
-  const daysInMonth = new Date(year, month0 + 1, 0).getDate();
-  const cells: (CalendarCell | null)[] = [];
-  for (let i = 0; i < leading; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ iso: toISODate(new Date(year, month0, d)), day: d });
-  }
-  return cells;
-}
-
 /** The Monday→Sunday ISO dates of the week containing `iso`. */
 export function weekDates(iso: string): string[] {
   const d = fromISODate(iso);
