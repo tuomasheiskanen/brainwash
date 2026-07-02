@@ -1,5 +1,5 @@
 import { db, type StoredDay } from "./db";
-import { emptyDrinks } from "./types";
+import { emptyDrinks, emptyExercises } from "./types";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 /**
@@ -80,6 +80,7 @@ function rowFromStored(uid: string, s: StoredDay) {
     mood_tags: s.moodTags,
     note: s.note,
     drinks: s.drinks,
+    exercises: s.exercises,
     sleep_hours: s.sleepHours,
     sleep_quality: s.sleepQuality,
     deleted: Boolean(s.deleted),
@@ -93,6 +94,7 @@ interface RemoteRow {
   mood_tags: string[] | null;
   note: string | null;
   drinks: StoredDay["drinks"] | null;
+  exercises: StoredDay["exercises"] | null;
   sleep_hours: number | null;
   sleep_quality: number | null;
   deleted: boolean;
@@ -106,6 +108,7 @@ function storedFromRow(row: RemoteRow): StoredDay {
     moodTags: row.mood_tags ?? [],
     note: row.note ?? "",
     drinks: { ...emptyDrinks(), ...(row.drinks ?? {}) },
+    exercises: { ...emptyExercises(), ...(row.exercises ?? {}) },
     sleepHours: row.sleep_hours ?? null,
     sleepQuality: row.sleep_quality ?? null,
     updatedAt: new Date(row.updated_at).getTime(),

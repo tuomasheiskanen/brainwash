@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import { emptyDrinks, type DayEntry } from "./types";
+import { emptyDrinks, emptyExercises, type DayEntry } from "./types";
 
 /**
  * The on-device record: a DayEntry plus two sync flags.
@@ -17,9 +17,13 @@ export function toDomain(s: StoredDay): DayEntry {
   const { dirty, deleted, ...entry } = s;
   void dirty;
   void deleted;
-  // Backfill any drink keys missing from older records so the unit math and
+  // Backfill any drink/exercise keys missing from older records so the math and
   // increment handlers never see `undefined`.
-  return { ...entry, drinks: { ...emptyDrinks(), ...entry.drinks } };
+  return {
+    ...entry,
+    drinks: { ...emptyDrinks(), ...entry.drinks },
+    exercises: { ...emptyExercises(), ...entry.exercises },
+  };
 }
 
 export class HealthDB extends Dexie {
