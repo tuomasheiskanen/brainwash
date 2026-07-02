@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { dailyUnits } from "@/lib/config";
+import { dailyUnits, totalReps } from "@/lib/config";
 import {
   addDays,
   formatMonthTitle,
@@ -15,7 +15,7 @@ import type { DayEntry } from "@/lib/types";
 import { Card } from "./Card";
 
 type Range = "week" | "month";
-type MetricKey = "mood" | "alcohol" | "sleepHours" | "sleepQuality";
+type MetricKey = "mood" | "alcohol" | "exercise" | "sleepHours" | "sleepQuality";
 
 interface Metric {
   key: MetricKey;
@@ -43,6 +43,15 @@ const METRICS: Metric[] = [
     label: "Alcohol",
     title: "Alcohol units",
     value: (e) => dailyUnits(e.drinks),
+    aggregate: "sum",
+    scaleMax: null,
+  },
+  {
+    key: "exercise",
+    label: "Reps",
+    title: "Exercise reps",
+    // Null on rest days (no reps) so they don't plot a zero bar.
+    value: (e) => totalReps(e.exercises) || null,
     aggregate: "sum",
     scaleMax: null,
   },
@@ -433,6 +442,13 @@ function summarize(
         icon: "🌿",
         text: `${freeDays} alcohol-free ${freeDays === 1 ? "day" : "days"} ${span}`,
       };
+    case "exercise": {
+      const active = values.length; // rest days are null, so all values are > 0
+      return {
+        icon: "💪",
+        text: `${active} active ${active === 1 ? "day" : "days"} ${span}`,
+      };
+    }
     case "mood":
       return { icon: "🙂", text: `Average mood ${avg.toFixed(1)} / 5 ${span}` };
     case "sleepHours":

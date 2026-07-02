@@ -1,4 +1,4 @@
-import type { DrinkKey, Drinks } from "./types";
+import type { DrinkKey, Drinks, ExerciseKey, Exercises } from "./types";
 
 /**
  * Drink-type configuration. Finnish alcohol "units" per serving live HERE as
@@ -38,6 +38,32 @@ export function dailyUnits(drinks: Drinks): number {
 
 export function totalServings(drinks: Drinks): number {
   return DRINKS.reduce((sum, d) => sum + (drinks[d.key] ?? 0), 0);
+}
+
+/**
+ * Equipment-free bodyweight exercises. `step` is how many reps one tap adds,
+ * tuned per movement so logging a typical set is a single tap (and the same
+ * step decrements, for undo). No gear, doable in a living room.
+ */
+export interface ExerciseConfig {
+  key: ExerciseKey;
+  label: string;
+  emoji: string;
+  step: number;
+}
+
+export const EXERCISES: ExerciseConfig[] = [
+  { key: "pushups", label: "Push-ups", emoji: "💪", step: 5 },
+  { key: "squats", label: "Squats", emoji: "🦵", step: 5 },
+  { key: "situps", label: "Sit-ups", emoji: "🔥", step: 5 },
+  { key: "lunges", label: "Lunges", emoji: "🚶", step: 5 },
+  { key: "burpees", label: "Burpees", emoji: "🤸", step: 5 },
+  { key: "jumpingJacks", label: "Jumping jacks", emoji: "⭐", step: 10 },
+];
+
+/** Total reps logged across all movements for a day. */
+export function totalReps(exercises: Exercises): number {
+  return EXERCISES.reduce((sum, e) => sum + (exercises[e.key] ?? 0), 0);
 }
 
 /** 1–5 mood scale, calm tone, emoji over numbers. */

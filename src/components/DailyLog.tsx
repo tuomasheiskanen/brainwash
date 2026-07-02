@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { addDays, todayISO } from "@/lib/date";
 import { useDay } from "@/lib/useDay";
-import type { DrinkKey } from "@/lib/types";
+import type { DrinkKey, ExerciseKey } from "@/lib/types";
 import { DateHeader } from "./DateHeader";
 import { MoodSection } from "./MoodSection";
+import { ExerciseSection } from "./ExerciseSection";
 import { AlcoholSection } from "./AlcoholSection";
 import { SleepSection } from "./SleepSection";
 import { AccountControl } from "./AccountControl";
@@ -43,6 +44,18 @@ export function DailyLog() {
       drinks: { ...p.drinks, [key]: Math.max(0, p.drinks[key] - 1) },
     }));
 
+  const incExercise = (key: ExerciseKey, step: number) =>
+    update((p) => ({
+      ...p,
+      exercises: { ...p.exercises, [key]: p.exercises[key] + step },
+    }));
+
+  const decExercise = (key: ExerciseKey, step: number) =>
+    update((p) => ({
+      ...p,
+      exercises: { ...p.exercises, [key]: Math.max(0, p.exercises[key] - step) },
+    }));
+
   const setQuality = (q: number) =>
     update((p) => ({ ...p, sleepQuality: p.sleepQuality === q ? null : q }));
 
@@ -71,6 +84,12 @@ export function DailyLog() {
         onMood={setMood}
         onToggleTag={toggleTag}
         onNote={(note) => update({ note })}
+      />
+
+      <ExerciseSection
+        exercises={entry.exercises}
+        onInc={incExercise}
+        onDec={decExercise}
       />
 
       <AlcoholSection drinks={entry.drinks} onInc={incDrink} onDec={decDrink} />

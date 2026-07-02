@@ -29,9 +29,10 @@ npm run dev          # or: npm run build && npm start
 ```
 
 ## 4. Create the schema
-Apply `supabase/migrations/0001_init_day_entries.sql`. Either:
+Apply every file in `supabase/migrations/` in order (`0001_init_day_entries.sql`,
+`0002_add_exercises.sql`, …). Either:
 
-**A. Dashboard (quickest):** SQL Editor → paste the file's contents → **Run**.
+**A. Dashboard (quickest):** SQL Editor → paste each file's contents → **Run**.
 
 **B. Supabase CLI (version-controlled):**
 ```bash
