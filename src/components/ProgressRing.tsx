@@ -24,6 +24,7 @@ export function ProgressRing({
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         transform="rotate(-90 32 32)"
+        style={{ transition: "stroke-dashoffset 0.4s ease" }}
       />
     </svg>
   );

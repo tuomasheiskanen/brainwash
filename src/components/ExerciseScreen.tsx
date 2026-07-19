@@ -6,7 +6,6 @@ import { useDay } from "@/lib/useDay";
 import { useExercises, useExerciseStreak } from "@/lib/useExercises";
 import { ExerciseCard } from "./ExerciseCard";
 import { StreakPill } from "./StreakPill";
-import { TodaysExerciseLog } from "./TodaysExerciseLog";
 
 export function ExerciseScreen() {
   const [mounted, setMounted] = useState(false);
@@ -23,10 +22,10 @@ export function ExerciseScreen() {
       exerciseSets: { ...p.exerciseSets, [id]: [...(p.exerciseSets[id] ?? []), amount] },
     }));
 
-  const removeSet = (id: string, index: number) =>
+  const removeLast = (id: string) =>
     update((p) => {
       const arr = [...(p.exerciseSets[id] ?? [])];
-      arr.splice(index, 1);
+      arr.pop();
       return { ...p, exerciseSets: { ...p.exerciseSets, [id]: arr } };
     });
 
@@ -55,28 +54,22 @@ export function ExerciseScreen() {
 
       {/* exercise grid */}
       {favorites.length > 0 ? (
-        <div className="mb-[22px] grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {favorites.map((ex) => (
             <ExerciseCard
               key={ex.id}
               exercise={ex}
               sets={entry.exerciseSets[ex.id] ?? []}
               onAdd={(amount) => addSet(ex.id, amount)}
+              onRemoveLast={() => removeLast(ex.id)}
             />
           ))}
         </div>
       ) : (
-        <div className="mb-[22px] mt-16 text-center text-[13px] text-faint">
+        <div className="mt-16 text-center text-[13px] text-faint">
           No exercises on Today yet.
         </div>
       )}
-
-      {/* today's log */}
-      <TodaysExerciseLog
-        exercises={favorites}
-        sets={entry.exerciseSets}
-        onRemove={removeSet}
-      />
     </div>
   );
 }
