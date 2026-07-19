@@ -65,6 +65,18 @@ export function unitSuffix(unit: ExerciseUnit): string {
   }
 }
 
+/** Short unit label for meta lines, e.g. "reps" / "sec" / "min" / "sets". */
+export function unitLabel(unit: ExerciseUnit): string {
+  switch (unit) {
+    case "seconds":
+      return "sec";
+    case "minutes":
+      return "min";
+    default:
+      return unit; // "reps" | "sets"
+  }
+}
+
 /** Sub-label under the ring when there's no goal, e.g. "sec logged". */
 export function loggedSubLabel(unit: ExerciseUnit): string {
   switch (unit) {
@@ -121,6 +133,49 @@ export function normalizeName(s: string): string {
 
 export function slugify(name: string): string {
   return normalizeName(name) || "exercise";
+}
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length,
+    n = b.length;
+  const d = Array.from({ length: m + 1 }, (_, i) => [i, ...new Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      d[i][j] = Math.min(
+        d[i - 1][j] + 1,
+        d[i][j - 1] + 1,
+        d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+  return d[m][n];
+}
+
+/**
+ * Suggest a close existing/library name to avoid dupes/typos — returns the
+ * nearest name within edit distance 2, or null (also null on an exact match).
+ */
+export function fuzzySuggest(name: string, pool: string[]): string | null {
+  const q = normalizeName(name);
+  if (!q) return null;
+  let best: string | null = null;
+  let bestD = 99;
+  const seen = new Set<string>();
+  for (const nm of pool) {
+    const en = normalizeName(nm);
+    if (seen.has(en)) continue;
+    seen.add(en);
+    const d = levenshtein(q, en);
+    if (d < bestD) {
+      bestD = d;
+      best = nm;
+    }
+  }
+  // Rank by normalized distance, but only suggest when the raw text differs —
+  // so "Pushups" still nudges toward the canonical "Push-ups".
+  if (best && bestD <= 2 && best.toLowerCase() !== name.trim().toLowerCase()) {
+    return best;
+  }
+  return null;
 }
 
 /**

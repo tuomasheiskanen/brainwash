@@ -1,6 +1,6 @@
 import { db, exerciseToDomain, toDomain } from "./db";
 import { scheduleSync } from "./sync";
-import { seedExercises, type Exercise } from "./exercise";
+import { seedExercises, slugify, type Exercise, type ExerciseUnit } from "./exercise";
 import { hasData, type DayEntry } from "./types";
 
 /**
@@ -27,6 +27,23 @@ export interface HealthStore {
   ensureSeeded(): Promise<void>;
   /** Set (or clear, with null) an exercise's daily goal. */
   setExerciseGoal(id: string, goal: number | null): Promise<void>;
+  /** Create (or re-add/resurrect by slug) an exercise, favorited. Returns its id. */
+  addExercise(input: {
+    name: string;
+    unit: ExerciseUnit;
+    goal: number | null;
+  }): Promise<string>;
+  /** Edit an exercise's name / unit / goal. */
+  updateExercise(
+    id: string,
+    patch: { name?: string; unit?: ExerciseUnit; goal?: number | null }
+  ): Promise<void>;
+  /** Toggle whether an exercise appears on the Today grid. */
+  setExerciseFavorite(id: string, favorite: boolean): Promise<void>;
+  /** Permanently delete an exercise and purge its sets from every day. */
+  deleteExercise(id: string): Promise<void>;
+  /** Total sets ever logged for an exercise (for the delete confirmation). */
+  countExerciseEntries(id: string): Promise<number>;
 }
 
 class DexieHealthStore implements HealthStore {
@@ -101,6 +118,88 @@ class DexieHealthStore implements HealthStore {
     if (!ex) return;
     // Marked dirty for when exercise sync lands (P4); no day sync trigger needed.
     await db.exercises.put({ ...ex, goal, updatedAt: Date.now(), dirty: 1 });
+  }
+
+  async addExercise({
+    name,
+    unit,
+    goal,
+  }: {
+    name: string;
+    unit: ExerciseUnit;
+    goal: number | null;
+  }): Promise<string> {
+    const id = slugify(name);
+    const now = Date.now();
+    const existing = await db.exercises.get(id);
+    if (existing) {
+      // Same slug already tracked → re-favorite / resurrect rather than dupe.
+      await db.exercises.put({
+        ...existing,
+        name,
+        unit,
+        goal: goal ?? existing.goal,
+        favorite: true,
+        deleted: 0,
+        dirty: 1,
+        updatedAt: now,
+      });
+      return id;
+    }
+    const all = await db.exercises.toArray();
+    const order = all.reduce((m, e) => Math.max(m, e.order), -1) + 1;
+    await db.exercises.put({
+      id,
+      name,
+      unit,
+      goal,
+      favorite: true,
+      order,
+      updatedAt: now,
+      dirty: 1,
+      deleted: 0,
+    });
+    return id;
+  }
+
+  async updateExercise(
+    id: string,
+    patch: { name?: string; unit?: ExerciseUnit; goal?: number | null }
+  ): Promise<void> {
+    const ex = await db.exercises.get(id);
+    if (!ex) return;
+    await db.exercises.put({ ...ex, ...patch, updatedAt: Date.now(), dirty: 1 });
+  }
+
+  async setExerciseFavorite(id: string, favorite: boolean): Promise<void> {
+    const ex = await db.exercises.get(id);
+    if (!ex) return;
+    await db.exercises.put({ ...ex, favorite, updatedAt: Date.now(), dirty: 1 });
+  }
+
+  async deleteExercise(id: string): Promise<void> {
+    const ex = await db.exercises.get(id);
+    if (ex && !ex.deleted) {
+      await db.exercises.put({ ...ex, deleted: 1, dirty: 1, updatedAt: Date.now() });
+    }
+    // Purge its sets from every day. exerciseSets isn't synced yet, so update
+    // the field in place without bumping day updatedAt/dirty (no sync churn).
+    const days = await db.days.toArray();
+    for (const d of days) {
+      if (d.exerciseSets && id in d.exerciseSets) {
+        const rest = { ...d.exerciseSets };
+        delete rest[id];
+        await db.days.update(d.date, { exerciseSets: rest });
+      }
+    }
+  }
+
+  async countExerciseEntries(id: string): Promise<number> {
+    const days = await db.days.toArray();
+    return days.reduce(
+      (n, d) => n + (d.deleted ? 0 : d.exerciseSets?.[id]?.length ?? 0),
+      0
+    );
   }
 }
 
