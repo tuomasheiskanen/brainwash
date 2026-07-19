@@ -92,6 +92,24 @@ export function suggestedGoalFor(name: string, unit: ExerciseUnit): number {
   return libraryFor(name)?.suggestedGoal ?? UNIT_CONFIG[unit].defaultGoal;
 }
 
+/** Amount a goal is adjusted by with +/-. */
+export function goalStepFor(unit: ExerciseUnit): number {
+  return UNIT_CONFIG[unit].goalStep;
+}
+
+/** Round to the nearest step, never below one step. */
+export function roundToStep(value: number, step: number): number {
+  return Math.max(step, Math.round(value / step) * step);
+}
+
+/** Three starting-point presets around the suggested goal, e.g. Pull-ups → 5/10/15. */
+export function presetsFor(name: string, unit: ExerciseUnit): number[] {
+  const s = suggestedGoalFor(name, unit);
+  const step = goalStepFor(unit);
+  const raw = [s / 2, s, s * 1.5].map((v) => roundToStep(v, step));
+  return [...new Set(raw)].filter((v) => v > 0);
+}
+
 export function totalOf(sets: number[] | undefined): number {
   return (sets ?? []).reduce((a, b) => a + b, 0);
 }

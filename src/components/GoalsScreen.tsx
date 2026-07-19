@@ -1,0 +1,103 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { healthStore } from "@/lib/store";
+import { goalStepFor, type Exercise } from "@/lib/exercise";
+import { useExercises, useExerciseStats } from "@/lib/useExercises";
+import { GoalRow } from "./GoalRow";
+
+const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
+const snoozeKey = (id: string) => `bb_raise_snooze_${id}`;
+
+export function GoalsScreen() {
+  const [mounted, setMounted] = useState(false);
+  const exercises = useExercises();
+  const stats = useExerciseStats();
+  const [snoozed, setSnoozed] = useState<Set<string>>(new Set());
+
+  useEffect(() => setMounted(true), []);
+
+  // Load per-exercise raise snoozes from localStorage.
+  useEffect(() => {
+    if (!exercises) return;
+    const now = Date.now();
+    const active = new Set<string>();
+    for (const ex of exercises) {
+      if (Number(localStorage.getItem(snoozeKey(ex.id)) || 0) > now) active.add(ex.id);
+    }
+    setSnoozed(active);
+  }, [exercises]);
+
+  const snooze = (id: string) => {
+    localStorage.setItem(snoozeKey(id), String(Date.now() + SNOOZE_MS));
+    setSnoozed((s) => new Set(s).add(id));
+  };
+
+  const setGoal = (ex: Exercise, value: number) =>
+    void healthStore.setExerciseGoal(ex.id, value);
+  const adjust = (ex: Exercise, delta: number) => {
+    const step = goalStepFor(ex.unit);
+    void healthStore.setExerciseGoal(ex.id, Math.max(step, (ex.goal ?? 0) + delta));
+  };
+  const raise = (ex: Exercise, newGoal: number) => {
+    void healthStore.setExerciseGoal(ex.id, newGoal);
+    snooze(ex.id);
+  };
+
+  if (!mounted || !exercises) {
+    return (
+      <div className="px-5 pt-[26px]">
+        <div className="mt-10 text-center text-[13px] text-faint">Loading…</div>
+      </div>
+    );
+  }
+
+  const anyGoals = exercises.some((e) => e.goal != null);
+
+  return (
+    <div className="px-5 pb-4 pt-[26px]">
+      <div className="mx-0.5 mb-1 text-[24px] font-extrabold tracking-[-0.02em]">Goals</div>
+      <div className="mx-0.5 mb-5 text-[13px] font-medium text-faint">
+        Optional daily targets — skip any, change them anytime.
+      </div>
+
+      {!anyGoals && (
+        <div className="mb-5 rounded-[20px] bg-accent-tint px-[18px] py-4">
+          <div className="mb-1 text-[13.5px] font-bold text-accent-deep">
+            Goals are optional
+          </div>
+          <div className="text-[12.5px] font-medium leading-[1.5] text-accent-muted">
+            Add one when you&apos;d like a gentle nudge toward a daily number — or just
+            keep logging without any.
+          </div>
+        </div>
+      )}
+
+      {exercises.length > 0 ? (
+        <div className="flex flex-col gap-3">
+          {exercises.map((ex) => (
+            <GoalRow
+              key={ex.id}
+              exercise={ex}
+              stat={stats?.get(ex.id)}
+              snoozed={snoozed.has(ex.id)}
+              onSetGoal={(v) => setGoal(ex, v)}
+              onAdjust={(d) => adjust(ex, d)}
+              onRaise={(g) => raise(ex, g)}
+              onDismissRaise={() => snooze(ex.id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-16 text-center text-[13px] text-faint">
+          Add an exercise first, then set a goal here.
+        </div>
+      )}
+
+      <div className="mx-3 mt-5 text-center text-[12px] font-medium leading-[1.5] text-ghost">
+        Goals are optional. You can log without any — they&apos;re just a gentle nudge,
+        never a test.
+      </div>
+    </div>
+  );
+}

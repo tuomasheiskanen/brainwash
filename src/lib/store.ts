@@ -25,6 +25,8 @@ export interface HealthStore {
   listExercises(): Promise<Exercise[]>;
   /** Seed the default exercises once, if none exist yet. */
   ensureSeeded(): Promise<void>;
+  /** Set (or clear, with null) an exercise's daily goal. */
+  setExerciseGoal(id: string, goal: number | null): Promise<void>;
 }
 
 class DexieHealthStore implements HealthStore {
@@ -92,6 +94,13 @@ class DexieHealthStore implements HealthStore {
     }));
     // bulkPut keyed by id → idempotent if two callers race.
     await db.exercises.bulkPut(seeds);
+  }
+
+  async setExerciseGoal(id: string, goal: number | null): Promise<void> {
+    const ex = await db.exercises.get(id);
+    if (!ex) return;
+    // Marked dirty for when exercise sync lands (P4); no day sync trigger needed.
+    await db.exercises.put({ ...ex, goal, updatedAt: Date.now(), dirty: 1 });
   }
 }
 

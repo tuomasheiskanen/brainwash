@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { formatDayHeader, todayISO } from "@/lib/date";
+import { totalOf } from "@/lib/exercise";
 import { useDay } from "@/lib/useDay";
 import { useExercises, useExerciseStreak } from "@/lib/useExercises";
 import { ExerciseCard } from "./ExerciseCard";
@@ -38,6 +40,11 @@ export function ExerciseScreen() {
   }
 
   const favorites = exercises.filter((e) => e.favorite);
+  const withGoals = favorites.filter((e) => e.goal != null);
+  const goalCount = withGoals.length;
+  const hitCount = withGoals.filter(
+    (e) => totalOf(entry.exerciseSets[e.id]) >= (e.goal as number)
+  ).length;
 
   return (
     <div className="px-5 pb-4 pt-[22px]">
@@ -69,6 +76,23 @@ export function ExerciseScreen() {
         <div className="mt-16 text-center text-[13px] text-faint">
           No exercises on Today yet.
         </div>
+      )}
+
+      {/* summary strip → Goals (always the entry point to the Goals screen) */}
+      {favorites.length > 0 && (
+        <Link href="/exercise/goals" className="mt-[22px] block">
+          <div className="flex items-center justify-between rounded-[18px] bg-accent-tint px-[18px] py-[15px]">
+            <div className="flex items-center gap-[11px]">
+              <div className="h-2 w-2 rounded-full bg-accent" />
+              <div className="text-[13.5px] font-bold text-accent-deep">
+                {goalCount > 0
+                  ? `${hitCount} of ${goalCount} goals hit today`
+                  : "Set optional daily goals"}
+              </div>
+            </div>
+            <div className="text-[12px] font-bold text-accent-muted">Goals ›</div>
+          </div>
+        </Link>
       )}
     </div>
   );
