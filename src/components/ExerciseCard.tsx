@@ -25,7 +25,9 @@ export function ExerciseCard({
   const suffix = unitSuffix(exercise.unit);
   const step = logStepFor(exercise);
   const hasGoal = exercise.goal != null;
-  const pct = hasGoal ? total / (exercise.goal as number) : 0;
+  // With a goal, fill toward it. Without one, the ring simply completes once
+  // anything is logged (and is empty at 0).
+  const pct = hasGoal ? total / (exercise.goal as number) : total > 0 ? 1 : 0;
   const sub = hasGoal ? `of ${exercise.goal}${suffix}` : loggedSubLabel(exercise.unit);
   const logged = sets.length > 0;
 
