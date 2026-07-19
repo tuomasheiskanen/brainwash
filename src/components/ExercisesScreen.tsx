@@ -4,20 +4,24 @@ import { useEffect, useState } from "react";
 import { healthStore } from "@/lib/store";
 import { goalStepFor, type Exercise } from "@/lib/exercise";
 import { useExercises, useExerciseStats } from "@/lib/useExercises";
-import { GoalRow } from "./GoalRow";
+import { BackHeader } from "./BackHeader";
+import { ExerciseRow } from "./ExerciseRow";
+import { DeleteConfirmSheet } from "./DeleteConfirmSheet";
 
 const SNOOZE_MS = 14 * 24 * 60 * 60 * 1000;
 const snoozeKey = (id: string) => `bb_raise_snooze_${id}`;
 
-export function GoalsScreen() {
+/** Combined Exercises screen: goals + favorites + edit/delete in one place. */
+export function ExercisesScreen() {
   const [mounted, setMounted] = useState(false);
   const exercises = useExercises();
   const stats = useExerciseStats();
   const [snoozed, setSnoozed] = useState<Set<string>>(new Set());
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<Exercise | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Load per-exercise raise snoozes from localStorage.
   useEffect(() => {
     if (!exercises) return;
     const now = Date.now();
@@ -56,9 +60,9 @@ export function GoalsScreen() {
 
   return (
     <div className="px-5 pb-4 pt-[26px]">
-      <div className="mx-0.5 mb-1 text-[24px] font-extrabold tracking-[-0.02em]">Goals</div>
-      <div className="mx-0.5 mb-5 text-[13px] font-medium text-faint">
-        Optional daily targets — skip any, change them anytime.
+      <BackHeader title="Exercises" href="/exercise" big />
+      <div className="mx-1 -mt-3 mb-5 text-[13px] font-medium text-faint">
+        Set goals, choose what&apos;s on Today, or edit and remove.
       </div>
 
       {!anyGoals && (
@@ -73,31 +77,36 @@ export function GoalsScreen() {
         </div>
       )}
 
-      {exercises.length > 0 ? (
-        <div className="flex flex-col gap-3">
-          {exercises.map((ex) => (
-            <GoalRow
-              key={ex.id}
-              exercise={ex}
-              stat={stats?.get(ex.id)}
-              snoozed={snoozed.has(ex.id)}
-              onSetGoal={(v) => setGoal(ex, v)}
-              onAdjust={(d) => adjust(ex, d)}
-              onRaise={(g) => raise(ex, g)}
-              onDismissRaise={() => snooze(ex.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="mt-16 text-center text-[13px] text-faint">
-          Add an exercise first, then set a goal here.
-        </div>
-      )}
+      <div className="flex flex-col gap-3">
+        {exercises.map((ex) => (
+          <ExerciseRow
+            key={ex.id}
+            exercise={ex}
+            stat={stats?.get(ex.id)}
+            snoozed={snoozed.has(ex.id)}
+            menuOpen={menuOpen === ex.id}
+            onSetGoal={(v) => setGoal(ex, v)}
+            onAdjust={(d) => adjust(ex, d)}
+            onRaise={(g) => raise(ex, g)}
+            onDismissRaise={() => snooze(ex.id)}
+            onToggleFavorite={() => healthStore.setExerciseFavorite(ex.id, !ex.favorite)}
+            onToggleMenu={() => setMenuOpen((m) => (m === ex.id ? null : ex.id))}
+            onAskDelete={() => {
+              setDeleting(ex);
+              setMenuOpen(null);
+            }}
+          />
+        ))}
+      </div>
 
       <div className="mx-3 mt-5 text-center text-[12px] font-medium leading-[1.5] text-ghost">
-        Goals are optional. You can log without any — they&apos;re just a gentle nudge,
-        never a test.
+        Goals are optional — log without any. Removing from Today just unfavorites;
+        nothing is lost.
       </div>
+
+      {deleting && (
+        <DeleteConfirmSheet exercise={deleting} onClose={() => setDeleting(null)} />
+      )}
     </div>
   );
 }

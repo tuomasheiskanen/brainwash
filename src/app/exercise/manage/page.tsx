@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/AppShell";
-import { ManageScreen } from "@/components/ManageScreen";
+import { ExercisesScreen } from "@/components/ExercisesScreen";
 
-export default function ManagePage() {
+export default function ExercisesPage() {
   return (
     <AppShell showTabBar={false}>
-      <ManageScreen />
+      <ExercisesScreen />
     </AppShell>
   );
 }

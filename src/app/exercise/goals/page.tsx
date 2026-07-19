@@ -1,10 +1,6 @@
-import { AppShell } from "@/components/AppShell";
-import { GoalsScreen } from "@/components/GoalsScreen";
+import { redirect } from "next/navigation";
 
+// Goals merged into the combined Exercises screen.
 export default function GoalsPage() {
-  return (
-    <AppShell>
-      <GoalsScreen />
-    </AppShell>
-  );
+  redirect("/exercise/manage");
 }

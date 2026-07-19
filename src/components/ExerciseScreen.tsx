@@ -81,26 +81,19 @@ export function ExerciseScreen() {
         </Link>
       </div>
 
-      {/* summary strip → Goals */}
-      <Link href="/exercise/goals" className="mt-[22px] block">
+      {/* summary strip → combined Exercises screen (goals + manage) */}
+      <Link href="/exercise/manage" className="mt-[22px] block">
         <div className="flex items-center justify-between rounded-[18px] bg-accent-tint px-[18px] py-[15px]">
           <div className="flex items-center gap-[11px]">
             <div className="h-2 w-2 rounded-full bg-accent" />
             <div className="text-[13.5px] font-bold text-accent-deep">
               {goalCount > 0
                 ? `${hitCount} of ${goalCount} goals hit today`
-                : "Set optional daily goals"}
+                : "Set goals & manage exercises"}
             </div>
           </div>
-          <div className="text-[12px] font-bold text-accent-muted">Goals ›</div>
+          <div className="text-[12px] font-bold text-accent-muted">Exercises ›</div>
         </div>
-      </Link>
-
-      <Link
-        href="/exercise/manage"
-        className="mt-4 block text-center text-[12.5px] font-semibold text-faint"
-      >
-        Manage exercises
       </Link>
     </div>
   );
