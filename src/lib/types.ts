@@ -16,6 +16,8 @@ export interface DayEntry {
   drinks: Drinks;
   sleepHours: number | null;
   sleepQuality: number | null; // 1..5
+  /** Sets logged that day per exercise id (reps/seconds/minutes/sets). */
+  exerciseSets: Record<string, number[]>;
   updatedAt: number;
 }
 
@@ -32,23 +34,25 @@ export function emptyEntry(date: string): DayEntry {
     drinks: emptyDrinks(),
     sleepHours: null,
     sleepQuality: null,
+    exerciseSets: {},
     updatedAt: 0,
   };
 }
 
-/** A day "has data" worth persisting / showing a dot for in history. */
+/** A day "has data" worth persisting / showing in history. */
 export function hasData(entry: DayEntry): boolean {
-  const drinkTotal =
-    entry.drinks.can +
-    entry.drinks.pint +
-    entry.drinks.wine +
-    entry.drinks.winePlus;
+  const drinkTotal = Object.values(entry.drinks).reduce((a, b) => a + b, 0);
+  const exerciseSetCount = Object.values(entry.exerciseSets).reduce(
+    (a, arr) => a + arr.length,
+    0
+  );
   return (
     entry.mood !== null ||
     entry.moodTags.length > 0 ||
     entry.note.trim() !== "" ||
     drinkTotal > 0 ||
     entry.sleepHours !== null ||
-    entry.sleepQuality !== null
+    entry.sleepQuality !== null ||
+    exerciseSetCount > 0
   );
 }

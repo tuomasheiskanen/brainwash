@@ -108,6 +108,9 @@ function storedFromRow(row: RemoteRow): StoredDay {
     drinks: { ...emptyDrinks(), ...(row.drinks ?? {}) },
     sleepHours: row.sleep_hours ?? null,
     sleepQuality: row.sleep_quality ?? null,
+    // Exercise sets don't sync yet (no column until P4); kept empty here and
+    // preserved from the local record in pull() so a pull can't drop them.
+    exerciseSets: {},
     updatedAt: new Date(row.updated_at).getTime(),
     dirty: 0,
     deleted: row.deleted ? 1 : 0,
@@ -164,8 +167,13 @@ async function pull(): Promise<boolean> {
       const remote = storedFromRow(row);
       const local = await db.days.get(remote.date);
       // Last-write-wins: only overwrite if remote is strictly newer (or new).
+      // Preserve local exerciseSets — they aren't synced yet, so remote never
+      // carries them and must not clobber locally-logged sets.
       if (!local || remote.updatedAt > local.updatedAt) {
-        await db.days.put(remote);
+        await db.days.put({
+          ...remote,
+          exerciseSets: local?.exerciseSets ?? remote.exerciseSets,
+        });
       }
       if (row.updated_at > maxCursor) maxCursor = row.updated_at;
     }

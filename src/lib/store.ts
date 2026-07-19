@@ -1,5 +1,6 @@
-import { db, toDomain } from "./db";
+import { db, exerciseToDomain, toDomain } from "./db";
 import { scheduleSync } from "./sync";
+import { seedExercises, type Exercise } from "./exercise";
 import { hasData, type DayEntry } from "./types";
 
 /**
@@ -19,6 +20,11 @@ export interface HealthStore {
   /** Inclusive ISO date range, ascending by date. Excludes tombstones. */
   getRange(startISO: string, endISO: string): Promise<DayEntry[]>;
   getAll(): Promise<DayEntry[]>;
+
+  /** All non-deleted exercises, ordered. */
+  listExercises(): Promise<Exercise[]>;
+  /** Seed the default exercises once, if none exist yet. */
+  ensureSeeded(): Promise<void>;
 }
 
 class DexieHealthStore implements HealthStore {
@@ -67,6 +73,25 @@ class DexieHealthStore implements HealthStore {
   async getAll(): Promise<DayEntry[]> {
     const rows = await db.days.orderBy("date").toArray();
     return rows.filter((r) => !r.deleted).map(toDomain);
+  }
+
+  async listExercises(): Promise<Exercise[]> {
+    const rows = await db.exercises.toArray();
+    return rows
+      .filter((r) => !r.deleted)
+      .sort((a, b) => a.order - b.order)
+      .map(exerciseToDomain);
+  }
+
+  async ensureSeeded(): Promise<void> {
+    if ((await db.exercises.count()) > 0) return;
+    const seeds = seedExercises(Date.now()).map((e) => ({
+      ...e,
+      dirty: 1,
+      deleted: 0,
+    }));
+    // bulkPut keyed by id → idempotent if two callers race.
+    await db.exercises.bulkPut(seeds);
   }
 }
 

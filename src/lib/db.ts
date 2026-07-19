@@ -1,5 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import { emptyDrinks, type DayEntry } from "./types";
+import type { Exercise } from "./exercise";
 
 /**
  * The on-device record: a DayEntry plus two sync flags.
@@ -12,18 +13,36 @@ export interface StoredDay extends DayEntry {
   deleted: number;
 }
 
+/** An exercise definition with the same sync flags. */
+export interface StoredExercise extends Exercise {
+  dirty: number;
+  deleted: number;
+}
+
 /** Strip the sync flags before handing a record to the UI/domain layer. */
 export function toDomain(s: StoredDay): DayEntry {
   const { dirty, deleted, ...entry } = s;
   void dirty;
   void deleted;
-  // Backfill any drink keys missing from older records so the unit math and
-  // increment handlers never see `undefined`.
-  return { ...entry, drinks: { ...emptyDrinks(), ...entry.drinks } };
+  // Backfill fields missing from older records so downstream code never sees
+  // `undefined` (drink keys added later, exerciseSets added later).
+  return {
+    ...entry,
+    drinks: { ...emptyDrinks(), ...entry.drinks },
+    exerciseSets: entry.exerciseSets ?? {},
+  };
+}
+
+export function exerciseToDomain(s: StoredExercise): Exercise {
+  const { dirty, deleted, ...ex } = s;
+  void dirty;
+  void deleted;
+  return ex;
 }
 
 export class HealthDB extends Dexie {
   days!: Table<StoredDay, string>;
+  exercises!: Table<StoredExercise, string>;
 
   constructor() {
     super("brainbud-health");
@@ -42,6 +61,12 @@ export class HealthDB extends Dexie {
             d.deleted = 0;
           })
       );
+    // v3: add the exercises table. Per-day sets ride on DayEntry.exerciseSets
+    // (not indexed), backfilled on read — so `days` needs no schema change.
+    this.version(3).stores({
+      days: "date, updatedAt, dirty, deleted",
+      exercises: "id, order, updatedAt, dirty, deleted",
+    });
   }
 }
 

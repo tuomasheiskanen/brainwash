@@ -11,6 +11,14 @@ function HomeIcon({ color }: { color: string }) {
   );
 }
 
+function ExerciseIcon({ color }: { color: string }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 12 H7 L9.5 5 L14 19 L16 12 H21" />
+    </svg>
+  );
+}
+
 function CalendarIcon({ color }: { color: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}>
@@ -22,6 +30,7 @@ function CalendarIcon({ color }: { color: string }) {
 
 const TABS = [
   { href: "/", label: "Today", Icon: HomeIcon },
+  { href: "/exercise", label: "Exercise", Icon: ExerciseIcon },
   { href: "/history", label: "History", Icon: CalendarIcon },
 ];
 
