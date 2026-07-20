@@ -116,8 +116,8 @@ class DexieHealthStore implements HealthStore {
   async setExerciseGoal(id: string, goal: number | null): Promise<void> {
     const ex = await db.exercises.get(id);
     if (!ex) return;
-    // Marked dirty for when exercise sync lands (P4); no day sync trigger needed.
     await db.exercises.put({ ...ex, goal, updatedAt: Date.now(), dirty: 1 });
+    scheduleSync();
   }
 
   async addExercise({
@@ -144,6 +144,7 @@ class DexieHealthStore implements HealthStore {
         dirty: 1,
         updatedAt: now,
       });
+      scheduleSync();
       return id;
     }
     const all = await db.exercises.toArray();
@@ -159,6 +160,7 @@ class DexieHealthStore implements HealthStore {
       dirty: 1,
       deleted: 0,
     });
+    scheduleSync();
     return id;
   }
 
@@ -169,12 +171,14 @@ class DexieHealthStore implements HealthStore {
     const ex = await db.exercises.get(id);
     if (!ex) return;
     await db.exercises.put({ ...ex, ...patch, updatedAt: Date.now(), dirty: 1 });
+    scheduleSync();
   }
 
   async setExerciseFavorite(id: string, favorite: boolean): Promise<void> {
     const ex = await db.exercises.get(id);
     if (!ex) return;
     await db.exercises.put({ ...ex, favorite, updatedAt: Date.now(), dirty: 1 });
+    scheduleSync();
   }
 
   async deleteExercise(id: string): Promise<void> {
@@ -182,16 +186,18 @@ class DexieHealthStore implements HealthStore {
     if (ex && !ex.deleted) {
       await db.exercises.put({ ...ex, deleted: 1, dirty: 1, updatedAt: Date.now() });
     }
-    // Purge its sets from every day. exerciseSets isn't synced yet, so update
-    // the field in place without bumping day updatedAt/dirty (no sync churn).
+    // Purge its sets from every day, marking those days dirty so the purge
+    // propagates to the cloud (and thus other devices) on the next sync.
     const days = await db.days.toArray();
+    const now = Date.now();
     for (const d of days) {
       if (d.exerciseSets && id in d.exerciseSets) {
         const rest = { ...d.exerciseSets };
         delete rest[id];
-        await db.days.update(d.date, { exerciseSets: rest });
+        await db.days.update(d.date, { exerciseSets: rest, dirty: 1, updatedAt: now });
       }
     }
+    scheduleSync();
   }
 
   async countExerciseEntries(id: string): Promise<number> {

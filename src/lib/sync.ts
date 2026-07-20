@@ -1,5 +1,6 @@
-import { db, type StoredDay } from "./db";
+import { db, type StoredDay, type StoredExercise } from "./db";
 import { emptyDrinks } from "./types";
+import type { ExerciseUnit } from "./exercise";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 
 /**
@@ -13,6 +14,7 @@ import { getSupabase, isSupabaseConfigured } from "./supabase";
  */
 
 const TABLE = "day_entries";
+const EX_TABLE = "exercises";
 const EPOCH = "1970-01-01T00:00:00Z";
 
 export type SyncPhase =
@@ -67,9 +69,16 @@ async function currentUserId(): Promise<string | null> {
 function cursorKey(uid: string) {
   return `bb_sync_cursor_${uid}`;
 }
+function exCursorKey(uid: string) {
+  return `bb_sync_cursor_ex_${uid}`;
+}
 
 async function pendingCount(): Promise<number> {
-  return db.days.where("dirty").equals(1).count();
+  const [d, e] = await Promise.all([
+    db.days.where("dirty").equals(1).count(),
+    db.exercises.where("dirty").equals(1).count(),
+  ]);
+  return d + e;
 }
 
 function rowFromStored(uid: string, s: StoredDay) {
@@ -82,6 +91,7 @@ function rowFromStored(uid: string, s: StoredDay) {
     drinks: s.drinks,
     sleep_hours: s.sleepHours,
     sleep_quality: s.sleepQuality,
+    exercise_sets: s.exerciseSets,
     deleted: Boolean(s.deleted),
     updated_at: new Date(s.updatedAt).toISOString(),
   };
@@ -95,6 +105,7 @@ interface RemoteRow {
   drinks: StoredDay["drinks"] | null;
   sleep_hours: number | null;
   sleep_quality: number | null;
+  exercise_sets: Record<string, number[]> | null;
   deleted: boolean;
   updated_at: string;
 }
@@ -108,9 +119,7 @@ function storedFromRow(row: RemoteRow): StoredDay {
     drinks: { ...emptyDrinks(), ...(row.drinks ?? {}) },
     sleepHours: row.sleep_hours ?? null,
     sleepQuality: row.sleep_quality ?? null,
-    // Exercise sets don't sync yet (no column until P4); kept empty here and
-    // preserved from the local record in pull() so a pull can't drop them.
-    exerciseSets: {},
+    exerciseSets: row.exercise_sets ?? {},
     updatedAt: new Date(row.updated_at).getTime(),
     dirty: 0,
     deleted: row.deleted ? 1 : 0,
@@ -167,13 +176,8 @@ async function pull(): Promise<boolean> {
       const remote = storedFromRow(row);
       const local = await db.days.get(remote.date);
       // Last-write-wins: only overwrite if remote is strictly newer (or new).
-      // Preserve local exerciseSets — they aren't synced yet, so remote never
-      // carries them and must not clobber locally-logged sets.
       if (!local || remote.updatedAt > local.updatedAt) {
-        await db.days.put({
-          ...remote,
-          exerciseSets: local?.exerciseSets ?? remote.exerciseSets,
-        });
+        await db.days.put(remote);
       }
       if (row.updated_at > maxCursor) maxCursor = row.updated_at;
     }
@@ -181,6 +185,108 @@ async function pull(): Promise<boolean> {
 
   if (typeof localStorage !== "undefined") {
     localStorage.setItem(cursorKey(uid), maxCursor);
+  }
+  return true;
+}
+
+// ---- Exercises entity (same LWW + tombstone model as days) ----
+
+function exerciseRowFromStored(uid: string, s: StoredExercise) {
+  return {
+    user_id: uid,
+    id: s.id,
+    name: s.name,
+    unit: s.unit,
+    goal: s.goal,
+    favorite: s.favorite,
+    sort_order: s.order,
+    deleted: Boolean(s.deleted),
+    updated_at: new Date(s.updatedAt).toISOString(),
+  };
+}
+
+interface RemoteExercise {
+  id: string;
+  name: string;
+  unit: string;
+  goal: number | null;
+  favorite: boolean;
+  sort_order: number;
+  deleted: boolean;
+  updated_at: string;
+}
+
+function storedExerciseFromRow(row: RemoteExercise): StoredExercise {
+  return {
+    id: row.id,
+    name: row.name,
+    unit: row.unit as ExerciseUnit,
+    goal: row.goal ?? null,
+    favorite: row.favorite,
+    order: row.sort_order ?? 0,
+    updatedAt: new Date(row.updated_at).getTime(),
+    dirty: 0,
+    deleted: row.deleted ? 1 : 0,
+  };
+}
+
+async function pushDirtyExercises(): Promise<boolean> {
+  const sb = getSupabase();
+  const uid = await currentUserId();
+  if (!sb || !uid) return false;
+
+  const dirty = await db.exercises.where("dirty").equals(1).toArray();
+  if (dirty.length === 0) return true;
+
+  const { error } = await sb
+    .from(EX_TABLE)
+    .upsert(dirty.map((s) => exerciseRowFromStored(uid, s)), {
+      onConflict: "user_id,id",
+    });
+  if (error) return false;
+
+  await db.transaction("rw", db.exercises, async () => {
+    for (const s of dirty) {
+      const cur = await db.exercises.get(s.id);
+      if (cur && cur.updatedAt === s.updatedAt && cur.dirty === 1) {
+        await db.exercises.update(s.id, { dirty: 0 });
+      }
+    }
+  });
+  return true;
+}
+
+async function pullExercises(): Promise<boolean> {
+  const sb = getSupabase();
+  const uid = await currentUserId();
+  if (!sb || !uid) return false;
+
+  const cursor =
+    (typeof localStorage !== "undefined" && localStorage.getItem(exCursorKey(uid))) ||
+    EPOCH;
+
+  const { data, error } = await sb
+    .from(EX_TABLE)
+    .select("*")
+    .gt("updated_at", cursor)
+    .order("updated_at", { ascending: true });
+  if (error) return false;
+  if (!data || data.length === 0) return true;
+
+  let maxCursor = cursor;
+  await db.transaction("rw", db.exercises, async () => {
+    for (const row of data as RemoteExercise[]) {
+      const remote = storedExerciseFromRow(row);
+      const local = await db.exercises.get(remote.id);
+      if (!local || remote.updatedAt > local.updatedAt) {
+        await db.exercises.put(remote);
+      }
+      if (row.updated_at > maxCursor) maxCursor = row.updated_at;
+    }
+  });
+
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(exCursorKey(uid), maxCursor);
   }
   return true;
 }
@@ -203,10 +309,12 @@ export function syncNow(): Promise<void> {
         return;
       }
       emit({ phase: "syncing" });
-      const pushed = await pushDirty();
-      const pulled = await pull();
+      const pushedDays = await pushDirty();
+      const pushedEx = await pushDirtyExercises();
+      const pulledDays = await pull();
+      const pulledEx = await pullExercises();
       const pending = await pendingCount();
-      if (pushed && pulled) {
+      if (pushedDays && pushedEx && pulledDays && pulledEx) {
         emit({ phase: "synced", lastSyncedAt: Date.now(), pending });
       } else {
         emit({ phase: "error", pending });

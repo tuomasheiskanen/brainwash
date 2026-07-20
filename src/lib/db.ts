@@ -67,6 +67,30 @@ export class HealthDB extends Dexie {
       days: "date, updatedAt, dirty, deleted",
       exercises: "id, order, updatedAt, dirty, deleted",
     });
+    // v4: exercise cloud sync arrives. Mark existing exercise data dirty so the
+    // first sync uploads what was logged while exercises were local-only.
+    this.version(4)
+      .stores({
+        days: "date, updatedAt, dirty, deleted",
+        exercises: "id, order, updatedAt, dirty, deleted",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table("days")
+          .toCollection()
+          .modify((d) => {
+            const sets = d.exerciseSets ?? {};
+            if (Object.values(sets).some((a) => (a as number[]).length > 0)) {
+              d.dirty = 1;
+            }
+          });
+        await tx
+          .table("exercises")
+          .toCollection()
+          .modify((e) => {
+            e.dirty = 1;
+          });
+      });
   }
 }
 
