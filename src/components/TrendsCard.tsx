@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { dailyUnits } from "@/lib/config";
 import {
   addDays,
@@ -78,7 +77,6 @@ interface Bar {
 }
 
 export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
-  const router = useRouter();
   const today = todayISO();
 
   const [metricKey, setMetricKey] = useState<MetricKey>("mood");
@@ -86,6 +84,11 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
   // A single anchor date drives navigation: its week in week view, its month in
   // month view.
   const [anchor, setAnchor] = useState<string>(() => todayISO());
+  // Tapping a bar selects it to reveal its exact value.
+  const [selected, setSelected] = useState<number | null>(null);
+
+  // Any view change clears the selection (bar indices no longer line up).
+  useEffect(() => setSelected(null), [metricKey, range, anchor]);
 
   const metric = METRICS.find((m) => m.key === metricKey)!;
   const anchorDate = fromISODate(anchor);
@@ -281,9 +284,11 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         </button>
       </div>
 
-      {/* Bars, overlaid with a rolling-average line (week) or a flat mean line
-          (month). */}
-      <div className="relative flex h-32 items-end gap-2 px-0.5">
+      {/* Chart + right-side value scale */}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          {/* Bars, overlaid with a rolling-average line (week) or flat mean (month). */}
+          <div className="relative flex h-32 items-end gap-2 px-0.5">
         {range === "week"
           ? trendLine && (
               <>
@@ -338,6 +343,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
             )}
         {bars.map((bar, i) => {
           const present = bar.value !== null;
+          const isSel = selected === i;
           const isFree = metric.key === "alcohol" && bar.value === 0;
           const hPct = present
             ? Math.max(6, Math.round((bar.value! / scaleMax) * 100))
@@ -350,47 +356,62 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
               className="w-[62%] max-w-[22px] rounded-md"
               style={{
                 height: `${hPct}%`,
-                background: bar.isToday ? "#0f766e" : "#14b8a6",
+                background: isSel || bar.isToday ? "#0f766e" : "#14b8a6",
               }}
             />
           ) : null;
 
-          const clickable = range === "week" && bar.iso && !bar.future;
-          const cls = "flex h-full flex-1 items-end justify-center";
+          const cls = "relative flex h-full flex-1 items-end justify-center";
 
-          return clickable ? (
+          // Tapping a bar with data reveals its exact value.
+          return present ? (
             <button
               type="button"
               key={i}
-              onClick={() => router.push(`/?date=${bar.iso}`)}
-              aria-label={`View ${bar.iso}`}
+              onClick={() => setSelected((s) => (s === i ? null : i))}
+              aria-label={`${bar.label}: ${fmt(bar.value!)}`}
               className={cls}
             >
+              {isSel && (
+                <span
+                  className="absolute left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[10px] font-extrabold shadow-sm"
+                  style={{ bottom: `calc(${hPct}% + 5px)`, color: "#0f766e" }}
+                >
+                  {fmt(bar.value!)}
+                </span>
+              )}
               {inner}
             </button>
           ) : (
-            <div
-              key={i}
-              className={cls}
-              style={{ opacity: bar.future ? 0.5 : 1 }}
-            >
+            <div key={i} className={cls} style={{ opacity: bar.future ? 0.5 : 1 }}>
               {inner}
             </div>
           );
         })}
       </div>
 
-      {/* Bar labels */}
-      <div className="mt-[7px] flex gap-2 px-0.5">
-        {bars.map((bar, i) => (
-          <div
-            key={i}
-            className="flex-1 text-center text-[10px] font-semibold"
-            style={{ color: bar.isToday ? "#0f766e" : "#b6bcc4" }}
-          >
-            {bar.label}
+          {/* Bar labels */}
+          <div className="mt-[7px] flex gap-2 px-0.5">
+            {bars.map((bar, i) => (
+              <div
+                key={i}
+                className="flex-1 text-center text-[10px] font-semibold"
+                style={{
+                  color: selected === i || bar.isToday ? "#0f766e" : "#b6bcc4",
+                }}
+              >
+                {bar.label}
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Right-side value scale (0 → max), aligned to the chart height. */}
+        <div className="flex h-32 w-7 shrink-0 flex-col items-end justify-between pb-px text-[9px] font-semibold leading-none text-ghost">
+          <span>{fmt(scaleMax)}</span>
+          <span>{fmt(scaleMax / 2)}</span>
+          <span>0</span>
+        </div>
       </div>
 
       {/* Legend for the rolling-average line */}
@@ -413,6 +434,11 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
       </div>
     </Card>
   );
+}
+
+/** Compact number: integers as-is, otherwise one decimal. */
+function fmt(v: number): string {
+  return v % 1 === 0 ? String(v) : v.toFixed(1);
 }
 
 function summarize(
