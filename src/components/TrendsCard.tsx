@@ -73,7 +73,7 @@ interface Bar {
   iso?: string; // present (and clickable) in the week view
   isToday?: boolean;
   future?: boolean;
-  trend?: number | null; // 7-day rolling average anchored on this day (week view)
+  trend?: number | null; // 21-day rolling average anchored on this day (week view)
 }
 
 export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
@@ -104,11 +104,11 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     setAnchor(toISODate(d));
   };
 
-  // 7-day rolling average of the metric ending on `endISO` (trailing window,
+  // 21-day rolling average of the metric ending on `endISO` (trailing window,
   // tracked days only). Uses data outside the visible window when needed.
   const trailingAvg = (endISO: string): number | null => {
     const vals: number[] = [];
-    for (let k = 0; k < 7; k++) {
+    for (let k = 0; k < 21; k++) {
       const e = entries.get(addDays(endISO, -k));
       const v = e ? metric.value(e) : null;
       if (v !== null) vals.push(v);
@@ -189,7 +189,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
   const avgPct =
     avgValue !== null ? Math.min(100, (avgValue / scaleMax) * 100) : null;
 
-  // Week view: a point per day at its 7-day rolling average (% from the bottom).
+  // Week view: a point per day at its 21-day rolling average (% from the bottom).
   const trendPts = bars.map((b, i) =>
     b.trend == null
       ? null
@@ -421,7 +421,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
             className="inline-block h-[2px] w-4 rounded-full"
             style={{ background: "#0f766e" }}
           />
-          7-day rolling average
+          21-day rolling average
         </div>
       )}
 
