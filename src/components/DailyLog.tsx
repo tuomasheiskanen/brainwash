@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { addDays, todayISO } from "@/lib/date";
 import { useDay } from "@/lib/useDay";
-import type { DrinkKey } from "@/lib/types";
 import { DateHeader } from "./DateHeader";
 import { MoodSection } from "./MoodSection";
-import { AlcoholSection } from "./AlcoholSection";
 import { SleepSection } from "./SleepSection";
 import { AccountControl } from "./AccountControl";
 
@@ -32,15 +30,6 @@ export function DailyLog() {
       moodTags: p.moodTags.includes(tag)
         ? p.moodTags.filter((t) => t !== tag)
         : [...p.moodTags, tag],
-    }));
-
-  const incDrink = (key: DrinkKey) =>
-    update((p) => ({ ...p, drinks: { ...p.drinks, [key]: p.drinks[key] + 1 } }));
-
-  const decDrink = (key: DrinkKey) =>
-    update((p) => ({
-      ...p,
-      drinks: { ...p.drinks, [key]: Math.max(0, p.drinks[key] - 1) },
     }));
 
   const setQuality = (q: number) =>
@@ -72,8 +61,6 @@ export function DailyLog() {
         onToggleTag={toggleTag}
         onNote={(note) => update({ note })}
       />
-
-      <AlcoholSection drinks={entry.drinks} onInc={incDrink} onDec={decDrink} />
     </div>
   );
 }

@@ -11,6 +11,15 @@ function HomeIcon({ color }: { color: string }) {
   );
 }
 
+function GlassIcon({ color }: { color: string }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 3 L7.5 21 H16.5 L18 3 Z" />
+      <path d="M6.6 9 H17.4" />
+    </svg>
+  );
+}
+
 function ExerciseIcon({ color }: { color: string }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -30,6 +39,7 @@ function CalendarIcon({ color }: { color: string }) {
 
 const TABS = [
   { href: "/", label: "Today", Icon: HomeIcon },
+  { href: "/alcohol", label: "Alcohol", Icon: GlassIcon },
   { href: "/exercise", label: "Exercise", Icon: ExerciseIcon },
   { href: "/history", label: "History", Icon: CalendarIcon },
 ];
