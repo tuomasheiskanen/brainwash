@@ -28,10 +28,14 @@ export function ExerciseForm({
   mode,
   exercise,
   initialName = "",
+  createBackHref = "/exercise/add",
+  createDoneHref = "/exercise",
 }: {
   mode: "create" | "edit";
   exercise?: Exercise;
   initialName?: string;
+  createBackHref?: string;
+  createDoneHref?: string;
 }) {
   const router = useRouter();
   const exercises = useExercises();
@@ -58,7 +62,7 @@ export function ExerciseForm({
       router.push("/exercise/manage");
     } else {
       await healthStore.addExercise({ name: name.trim(), unit, goal });
-      router.push("/exercise");
+      router.push(createDoneHref);
     }
   };
 
@@ -66,7 +70,7 @@ export function ExerciseForm({
     <div className="flex min-h-full flex-col px-5 pb-4 pt-[22px]">
       <BackHeader
         title={mode === "edit" ? "Edit exercise" : "New exercise"}
-        href={mode === "edit" ? "/exercise/manage" : "/exercise/add"}
+        href={mode === "edit" ? "/exercise/manage" : createBackHref}
       />
 
       {/* name */}

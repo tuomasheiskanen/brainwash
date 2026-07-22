@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { EXERCISE_LIBRARY, normalizeName, type ExerciseUnit } from "@/lib/exercise";
 import { healthStore } from "@/lib/store";
 import { BackHeader } from "./BackHeader";
 
 export function AddExerciseSearch() {
   const router = useRouter();
+  const fromManage = useSearchParams().get("from") === "manage";
+  const dest = fromManage ? "/exercise/manage" : "/exercise";
   const [query, setQuery] = useState("");
   const q = query.trim();
   const qn = normalizeName(q);
@@ -20,12 +22,12 @@ export function AddExerciseSearch() {
 
   const addLibrary = async (name: string, unit: ExerciseUnit) => {
     await healthStore.addExercise({ name, unit, goal: null });
-    router.push("/exercise");
+    router.push(dest);
   };
 
   return (
     <div className="px-5 pt-[22px]">
-      <BackHeader title="Add exercise" href="/exercise" />
+      <BackHeader title="Add exercise" href={dest} />
 
       <div className="mb-[18px] flex items-center gap-2.5 rounded-2xl bg-white px-[15px] py-[13px] shadow-card">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth={2}>
@@ -64,7 +66,11 @@ export function AddExerciseSearch() {
           <button
             type="button"
             onClick={() =>
-              router.push(`/exercise/add/new?name=${encodeURIComponent(q)}`)
+              router.push(
+                `/exercise/add/new?name=${encodeURIComponent(q)}${
+                  fromManage ? "&from=manage" : ""
+                }`
+              )
             }
             className="flex w-full items-center gap-3 py-[15px] text-left"
           >

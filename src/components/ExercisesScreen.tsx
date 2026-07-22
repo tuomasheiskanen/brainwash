@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { healthStore } from "@/lib/store";
 import { goalStepFor, type Exercise } from "@/lib/exercise";
 import { useExercises, useExerciseStats } from "@/lib/useExercises";
@@ -76,6 +77,16 @@ export function ExercisesScreen() {
           </div>
         </div>
       )}
+
+      <Link
+        href="/exercise/add?from=manage"
+        className="mb-3 flex items-center gap-3 rounded-[18px] border-2 border-dashed border-[#dcdfe4] px-[18px] py-4 text-faint"
+      >
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-field text-[22px] leading-none">
+          +
+        </div>
+        <div className="text-[13.5px] font-bold">Add exercise</div>
+      </Link>
 
       <div className="flex flex-col gap-3">
         {exercises.map((ex) => (
