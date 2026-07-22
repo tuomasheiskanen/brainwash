@@ -18,7 +18,14 @@ export function AddExerciseSearch() {
     (e) => !qn || normalizeName(e.name).includes(qn)
   );
   const exact = EXERCISE_LIBRARY.some((e) => normalizeName(e.name) === qn);
-  const showCreate = q.length > 0 && !exact;
+  // Prefill the create form's name only when the query is a real, non-library term.
+  const createName = q.length > 0 && !exact ? q : "";
+  const createParams = new URLSearchParams();
+  if (createName) createParams.set("name", createName);
+  if (fromManage) createParams.set("from", "manage");
+  const createHref = `/exercise/add/new${
+    createParams.toString() ? `?${createParams}` : ""
+  }`;
 
   const addLibrary = async (name: string, unit: ExerciseUnit) => {
     await healthStore.addExercise({ name, unit, goal: null });
@@ -42,13 +49,30 @@ export function AddExerciseSearch() {
         />
       </div>
 
-      <div className="rounded-[20px] bg-white px-4 shadow-card">
+      <div className="divide-y divide-surface-field rounded-[20px] bg-white px-4 shadow-card">
+        <button
+          type="button"
+          onClick={() => router.push(createHref)}
+          className="flex w-full items-center gap-3 py-[15px] text-left"
+        >
+          <div className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-accent-tint text-[17px] font-bold text-accent-deep">
+            +
+          </div>
+          <div className="text-[14px] font-bold text-accent-deep">
+            {createName ? (
+              <>Create &ldquo;{q}&rdquo;</>
+            ) : (
+              "Create a custom exercise"
+            )}
+          </div>
+        </button>
+
         {results.map((e) => (
           <button
             type="button"
             key={e.name}
             onClick={() => addLibrary(e.name, e.unit)}
-            className="flex w-full items-center justify-between border-b border-surface-field py-3.5 text-left"
+            className="flex w-full items-center justify-between py-3.5 text-left"
           >
             <div>
               <div className="text-[14.5px] font-bold">{e.name}</div>
@@ -61,33 +85,6 @@ export function AddExerciseSearch() {
             </div>
           </button>
         ))}
-
-        {showCreate && (
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                `/exercise/add/new?name=${encodeURIComponent(q)}${
-                  fromManage ? "&from=manage" : ""
-                }`
-              )
-            }
-            className="flex w-full items-center gap-3 py-[15px] text-left"
-          >
-            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-accent-tint text-[17px] font-bold text-accent-deep">
-              +
-            </div>
-            <div className="text-[14px] font-bold text-accent-deep">
-              Create &ldquo;{q}&rdquo;
-            </div>
-          </button>
-        )}
-
-        {results.length === 0 && !showCreate && (
-          <div className="py-4 text-center text-[12.5px] font-medium text-ghost">
-            Start typing to search or create a new one.
-          </div>
-        )}
       </div>
     </div>
   );
