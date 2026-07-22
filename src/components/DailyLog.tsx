@@ -14,7 +14,7 @@ export function DailyLog() {
   const paramDate = params.get("date");
   const [date, setDate] = useState(paramDate ?? todayISO());
 
-  // Follow a ?date= deep link from the History screen.
+  // Follow a ?date= deep link if one is present.
   useEffect(() => {
     if (paramDate) setDate(paramDate);
   }, [paramDate]);

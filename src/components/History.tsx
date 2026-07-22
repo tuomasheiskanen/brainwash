@@ -20,10 +20,10 @@ export function History() {
       <div className="mb-5 flex items-start justify-between">
         <div className="mx-1">
           <div className="mb-1 text-[24px] font-extrabold tracking-[-0.02em]">
-            History
+            Trends
           </div>
           <div className="text-[13px] font-medium text-faint">
-            Tap a day in the weekly view to edit it.
+            Tap a bar to see its value.
           </div>
         </div>
         <AccountControl />

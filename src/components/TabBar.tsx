@@ -28,11 +28,11 @@ function ExerciseIcon({ color }: { color: string }) {
   );
 }
 
-function CalendarIcon({ color }: { color: string }) {
+function TrendIcon({ color }: { color: string }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}>
-      <rect x="4" y="5" width="16" height="16" rx="3" />
-      <path d="M4 9 H20 M8 3 V7 M16 3 V7" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 5 V19 H20" />
+      <path d="M6 15 L10 10 L13.5 13 L19 6" />
     </svg>
   );
 }
@@ -41,7 +41,7 @@ const TABS = [
   { href: "/", label: "Today", Icon: HomeIcon },
   { href: "/alcohol", label: "Alcohol", Icon: GlassIcon },
   { href: "/exercise", label: "Exercise", Icon: ExerciseIcon },
-  { href: "/history", label: "History", Icon: CalendarIcon },
+  { href: "/history", label: "Trends", Icon: TrendIcon },
 ];
 
 /** Bottom navigation, fixed to the phone column, frosted like the design. */
