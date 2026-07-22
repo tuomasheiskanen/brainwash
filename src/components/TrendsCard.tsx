@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { dailyUnits } from "@/lib/config";
 import {
   addDays,
@@ -200,6 +200,9 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     .map((p) => `${p.x},${100 - p.frac}`)
     .join(" ");
 
+  // The average overlay (rolling line in week, flat mean in month) is only
+  // meaningful for accumulating alcohol units, so it's alcohol-only.
+  const isAlcohol = metric.key === "alcohol";
   const summary = summarize(metric, range, rangeValues, freeDays);
   const navPrev = () => (range === "week" ? shiftWeek(-1) : shiftMonth(-1));
   const navNext = () => (range === "week" ? shiftWeek(1) : shiftMonth(1));
@@ -289,7 +292,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         <div className="min-w-0 flex-1">
           {/* Bars, overlaid with a rolling-average line (week) or flat mean (month). */}
           <div className="relative flex h-32 items-end gap-2 px-0.5">
-        {range === "week"
+        {isAlcohol && (range === "week"
           ? trendLine && (
               <>
                 <svg
@@ -340,7 +343,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
                   </span>
                 </div>
               </div>
-            )}
+            ))}
         {bars.map((bar, i) => {
           const present = bar.value !== null;
           const isSel = selected === i;
@@ -363,6 +366,20 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
 
           const cls = "relative flex h-full flex-1 items-end justify-center";
 
+          // Average value at this bar (alcohol only): rolling avg in week view,
+          // flat mean in month view.
+          const avgVal =
+            isAlcohol && isSel
+              ? range === "week"
+                ? bar.trend ?? null
+                : avgValue
+              : null;
+          const avgTop =
+            avgVal != null ? Math.min(100, (avgVal / scaleMax) * 100) : null;
+          // When both readouts sit at similar heights, push them to opposite
+          // sides so the numbers never overlap.
+          const avgClose = avgTop != null && Math.abs(hPct - avgTop) < 16;
+
           // Tapping a bar with data reveals its exact value.
           return present ? (
             <button
@@ -374,10 +391,18 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
             >
               {isSel && (
                 <span
-                  className="absolute left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[10px] font-extrabold shadow-sm"
-                  style={{ bottom: `calc(${hPct}% + 5px)`, color: "#0f766e" }}
+                  className="absolute z-30 whitespace-nowrap rounded-md bg-white px-1.5 py-0.5 text-[10px] font-extrabold text-[#0f766e] shadow-sm"
+                  style={labelStyle(hPct, "above")}
                 >
                   {fmt(bar.value!)}
+                </span>
+              )}
+              {isSel && avgVal != null && avgTop != null && (
+                <span
+                  className="absolute z-30 whitespace-nowrap rounded-md bg-white px-1 py-0.5 text-[9px] font-bold text-accent-muted shadow-sm"
+                  style={labelStyle(avgTop, avgClose ? "below" : "above")}
+                >
+                  avg {fmt(avgVal)}
                 </span>
               )}
               {inner}
@@ -415,7 +440,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
       </div>
 
       {/* Legend for the rolling-average line */}
-      {range === "week" && trendLine && (
+      {isAlcohol && range === "week" && trendLine && (
         <div className="mt-2 flex items-center justify-center gap-1.5 text-[9.5px] font-semibold text-faint">
           <span
             className="inline-block h-[2px] w-4 rounded-full"
@@ -439,6 +464,14 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
 /** Compact number: integers as-is, otherwise one decimal. */
 function fmt(v: number): string {
   return v % 1 === 0 ? String(v) : v.toFixed(1);
+}
+
+/** Position a value label above or below a point (percent from the chart bottom). */
+function labelStyle(pct: number, side: "above" | "below"): CSSProperties {
+  const c = Math.min(96, Math.max(4, pct));
+  return side === "above"
+    ? { bottom: `calc(${c}% + 5px)`, left: "50%", transform: "translateX(-50%)" }
+    : { bottom: `calc(${c}% - 5px)`, left: "50%", transform: "translate(-50%, 100%)" };
 }
 
 function summarize(
