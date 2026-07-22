@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import { dailyUnits } from "@/lib/config";
 import {
   addDays,
@@ -207,6 +213,31 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
   const navPrev = () => (range === "week" ? shiftWeek(-1) : shiftMonth(-1));
   const navNext = () => (range === "week" ? shiftWeek(1) : shiftMonth(1));
 
+  // Swipe left/right on the chart to page through time. A guard suppresses the
+  // bar-tap that a swipe might otherwise trigger.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const swipedAt = useRef(0);
+  const onTouchStart = (e: ReactTouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+      if (dx < 0) {
+        if (!atLatest) navNext();
+      } else {
+        navPrev();
+      }
+      swipedAt.current = Date.now();
+    }
+  };
+
   return (
     <Card className="px-4 pb-[14px] pt-[18px]">
       {/* Title + range toggle */}
@@ -270,7 +301,7 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
           type="button"
           onClick={navPrev}
           aria-label={range === "week" ? "Previous week" : "Previous month"}
-          className="text-[17px] text-line"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[18px] font-bold text-accent-deep shadow-chip active:scale-95"
         >
           ‹
         </button>
@@ -280,15 +311,19 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
           onClick={navNext}
           disabled={atLatest}
           aria-label={range === "week" ? "Next week" : "Next month"}
-          className="text-[17px]"
-          style={{ color: atLatest ? "#d1d5db" : "#b6bcc4" }}
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-[18px] font-bold shadow-chip active:scale-95 disabled:shadow-none"
+          style={{ color: atLatest ? "#d1d5db" : "#0f766e" }}
         >
           ›
         </button>
       </div>
 
       {/* Chart + right-side value scale */}
-      <div className="flex items-start gap-2">
+      <div
+        className="flex touch-pan-y select-none items-start gap-2"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <div className="min-w-0 flex-1">
           {/* Bars, overlaid with a rolling-average line (week) or flat mean (month). */}
           <div className="relative flex h-32 items-end gap-2 px-0.5">
@@ -385,7 +420,11 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
             <button
               type="button"
               key={i}
-              onClick={() => setSelected((s) => (s === i ? null : i))}
+              onClick={() => {
+                // Ignore the tap a swipe leaves behind.
+                if (Date.now() - swipedAt.current < 350) return;
+                setSelected((s) => (s === i ? null : i));
+              }}
               aria-label={`${bar.label}: ${fmt(bar.value!)}`}
               className={cls}
             >
