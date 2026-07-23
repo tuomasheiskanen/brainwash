@@ -40,7 +40,7 @@ function TrendIcon({ color }: { color: string }) {
 const TABS = [
   { href: "/", label: "Today", Icon: HomeIcon },
   { href: "/alcohol", label: "Alcohol", Icon: GlassIcon },
-  { href: "/exercise", label: "Exercise", Icon: ExerciseIcon },
+  { href: "/exercise", label: "Activity", Icon: ExerciseIcon },
   { href: "/history", label: "Trends", Icon: TrendIcon },
 ];
 

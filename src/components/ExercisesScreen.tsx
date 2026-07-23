@@ -61,7 +61,7 @@ export function ExercisesScreen() {
 
   return (
     <div className="px-5 pb-4 pt-[26px]">
-      <BackHeader title="Exercises" href="/exercise" big />
+      <BackHeader title="Activities" href="/exercise" big />
       <div className="mx-1 -mt-3 mb-5 text-[13px] font-medium text-faint">
         Set goals, choose what&apos;s on Today, or edit and remove.
       </div>

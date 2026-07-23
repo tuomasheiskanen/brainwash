@@ -87,7 +87,7 @@ export function ExerciseScreen() {
     >
       {/* header */}
       <div className="mb-[18px] flex items-start justify-between">
-        <div className="text-[22px] font-extrabold tracking-[-0.02em]">Exercise</div>
+        <div className="text-[22px] font-extrabold tracking-[-0.02em]">Activity</div>
         {streak > 0 && isToday && <StreakPill streak={streak} />}
       </div>
 
@@ -126,7 +126,7 @@ export function ExerciseScreen() {
                 : "Set goals & manage exercises"}
             </div>
           </div>
-          <div className="text-[12px] font-bold text-accent-muted">Exercises ›</div>
+          <div className="text-[12px] font-bold text-accent-muted">Activities ›</div>
         </div>
       </Link>
     </div>
