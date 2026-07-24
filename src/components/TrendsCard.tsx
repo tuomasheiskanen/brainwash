@@ -183,15 +183,30 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
         month0 >= fromISODate(today).getMonth());
   }
 
-  const scaleMax =
-    metric.scaleMax ??
-    Math.max(1, ...bars.map((b) => (b.value === null ? 0 : b.value)));
+  // The average overlay (rolling line in week, flat mean in month) is only
+  // meaningful for accumulating alcohol units, so it's alcohol-only.
+  const isAlcohol = metric.key === "alcohol";
 
   // Mean of the visible bars — the flat reference line used in the month view.
   const chartVals = bars.filter((b) => b.value !== null).map((b) => b.value!);
   const avgValue = chartVals.length
     ? chartVals.reduce((a, b) => a + b, 0) / chartVals.length
     : null;
+
+  // The scale must also contain the alcohol average overlay. A fully
+  // alcohol-free week that follows weeks with consumption still has a non-zero
+  // rolling average; without this it would be pinned to the top of an all-zero
+  // (max 1) scale.
+  const overlayMax = isAlcohol
+    ? range === "week"
+      ? Math.max(0, ...bars.map((b) => b.trend ?? 0))
+      : avgValue ?? 0
+    : 0;
+
+  const scaleMax =
+    metric.scaleMax ??
+    Math.max(1, overlayMax, ...bars.map((b) => (b.value === null ? 0 : b.value)));
+
   const avgPct =
     avgValue !== null ? Math.min(100, (avgValue / scaleMax) * 100) : null;
 
@@ -206,9 +221,6 @@ export function TrendsCard({ entries }: { entries: Map<string, DayEntry> }) {
     .map((p) => `${p.x},${100 - p.frac}`)
     .join(" ");
 
-  // The average overlay (rolling line in week, flat mean in month) is only
-  // meaningful for accumulating alcohol units, so it's alcohol-only.
-  const isAlcohol = metric.key === "alcohol";
   const summary = summarize(metric, range, rangeValues, freeDays);
   const navPrev = () => (range === "week" ? shiftWeek(-1) : shiftMonth(-1));
   const navNext = () => (range === "week" ? shiftWeek(1) : shiftMonth(1));
