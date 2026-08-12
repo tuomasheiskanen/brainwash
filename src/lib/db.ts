@@ -30,6 +30,7 @@ export function toDomain(s: StoredDay): DayEntry {
     ...entry,
     drinks: { ...emptyDrinks(), ...entry.drinks },
     exerciseSets: entry.exerciseSets ?? {},
+    injuries: entry.injuries ?? [],
   };
 }
 

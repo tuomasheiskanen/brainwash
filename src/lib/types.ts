@@ -4,6 +4,21 @@ export type DrinkKey = "can" | "canIV" | "pint" | "pintIV" | "wine" | "winePlus"
 export type Drinks = Record<DrinkKey, number>;
 
 /**
+ * A reported injury: a spot on the body silhouette that hurts. `x`/`y` are
+ * percentages (0–100) of the body surface, so a marker maps to the same point at
+ * any screen size or device. `side` is which figure (front/back) it was placed on
+ * and `label` is the derived body region (e.g. "Left knee").
+ */
+export interface Injury {
+  x: number;
+  y: number;
+  side: "front" | "back";
+  label: string;
+  /** Stable body-region id (e.g. "forearm-r") — better for grouping than label. */
+  partId?: string;
+}
+
+/**
  * One calendar day of logging. `date` is the local-time ISO date (YYYY-MM-DD)
  * and is the primary key. All fields are optional/empty until the user logs
  * something — a day with no interaction is simply absent from storage.
@@ -18,6 +33,8 @@ export interface DayEntry {
   sleepQuality: number | null; // 1..5
   /** Sets logged that day per exercise id (reps/seconds/minutes/sets). */
   exerciseSets: Record<string, number[]>;
+  /** Spots on the body silhouette marked as hurting that day. */
+  injuries: Injury[];
   updatedAt: number;
 }
 
@@ -35,6 +52,7 @@ export function emptyEntry(date: string): DayEntry {
     sleepHours: null,
     sleepQuality: null,
     exerciseSets: {},
+    injuries: [],
     updatedAt: 0,
   };
 }
@@ -53,6 +71,7 @@ export function hasData(entry: DayEntry): boolean {
     drinkTotal > 0 ||
     entry.sleepHours !== null ||
     entry.sleepQuality !== null ||
-    exerciseSetCount > 0
+    exerciseSetCount > 0 ||
+    entry.injuries.length > 0
   );
 }

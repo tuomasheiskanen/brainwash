@@ -92,6 +92,7 @@ function rowFromStored(uid: string, s: StoredDay) {
     sleep_hours: s.sleepHours,
     sleep_quality: s.sleepQuality,
     exercise_sets: s.exerciseSets,
+    injuries: s.injuries,
     deleted: Boolean(s.deleted),
     updated_at: new Date(s.updatedAt).toISOString(),
   };
@@ -106,6 +107,7 @@ interface RemoteRow {
   sleep_hours: number | null;
   sleep_quality: number | null;
   exercise_sets: Record<string, number[]> | null;
+  injuries: StoredDay["injuries"] | null;
   deleted: boolean;
   updated_at: string;
 }
@@ -120,6 +122,7 @@ function storedFromRow(row: RemoteRow): StoredDay {
     sleepHours: row.sleep_hours ?? null,
     sleepQuality: row.sleep_quality ?? null,
     exerciseSets: row.exercise_sets ?? {},
+    injuries: row.injuries ?? [],
     updatedAt: new Date(row.updated_at).getTime(),
     dirty: 0,
     deleted: row.deleted ? 1 : 0,

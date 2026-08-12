@@ -129,6 +129,23 @@ export function ExerciseScreen() {
           <div className="text-[12px] font-bold text-accent-muted">Activities ›</div>
         </div>
       </Link>
+
+      {/* aches & injuries body map */}
+      <Link href={`/exercise/injuries?date=${date}`} className="mt-3 block">
+        <div className="flex items-center justify-between rounded-[18px] bg-accent-tint px-[18px] py-[15px]">
+          <div className="flex items-center gap-[11px]">
+            <div className="h-2 w-2 rounded-full bg-accent" />
+            <div className="text-[13.5px] font-bold text-accent-deep">
+              {entry.injuries.length > 0
+                ? `${entry.injuries.length} ${
+                    entry.injuries.length === 1 ? "spot" : "spots"
+                  } marked${isToday ? " today" : ""}`
+                : "Mark where it hurts"}
+            </div>
+          </div>
+          <div className="text-[12px] font-bold text-accent-muted">Aches &amp; injuries ›</div>
+        </div>
+      </Link>
     </div>
   );
 }
