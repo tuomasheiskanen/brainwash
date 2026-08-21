@@ -65,13 +65,13 @@ export const BODY_REGIONS: BodyRegion[] = [
 
   // hips
   { id: "hip-r", side: "r", front: "Hip", back: "Hip",
-    poly: [[29, 55], [50, 55], [50, 63], [30, 63]] },
+    poly: [[29, 55], [50, 55], [50, 59], [30, 59]] },
   { id: "hip-l", side: "l", front: "Hip", back: "Hip",
-    poly: [[50, 55], [72, 55], [71, 63], [50, 63]] },
+    poly: [[50, 55], [72, 55], [71, 59], [50, 59]] },
 
   // legs (person's right = screen-left)
   { id: "thigh-r", side: "r", front: "Thigh", back: "Hamstring",
-    poly: [[30, 62], [50, 62], [48, 70], [31, 70]] },
+    poly: [[30, 59], [50, 59], [48, 70], [31, 70]] },
   { id: "knee-r", side: "r", front: "Knee", back: "Knee",
     poly: [[31, 70], [48, 70], [46, 77], [32, 77]] },
   { id: "shin-r", side: "r", front: "Shin", back: "Calf",
@@ -80,7 +80,7 @@ export const BODY_REGIONS: BodyRegion[] = [
     poly: [[32, 92], [50, 92], [50, 100], [34, 100]] },
   // legs (person's left = screen-right)
   { id: "thigh-l", side: "l", front: "Thigh", back: "Hamstring",
-    poly: [[50, 62], [72, 62], [71, 70], [52, 70]] },
+    poly: [[50, 59], [72, 59], [71, 70], [52, 70]] },
   { id: "knee-l", side: "l", front: "Knee", back: "Knee",
     poly: [[52, 70], [69, 70], [68, 77], [54, 77]] },
   { id: "shin-l", side: "l", front: "Shin", back: "Calf",
