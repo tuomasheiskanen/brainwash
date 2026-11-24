@@ -1,14 +1,19 @@
 name: Deploy migrations to production
 
-# Apply Supabase migrations to the production database whenever migrations (or
-# the Supabase config) change on main. Manual runs are allowed via the Actions
-# tab (workflow_dispatch) — useful for a no-op dry run.
+# Apply Supabase migrations to the production database whenever migrations
+# change on main. Manual runs are allowed via the Actions tab
+# (workflow_dispatch); a run with nothing pending is a no-op.
+#
+# Production is the owner's shared Supabase project (one schema per app). Its
+# Supabase CLI migration history belongs to the project hub, so this must never
+# run `supabase link` or `supabase db push`. scripts/db-push.mjs keeps
+# Brainwash's own history in brainwash.schema_migrations instead.
 on:
   push:
     branches: [main]
     paths:
       - "supabase/migrations/**"
-      - "supabase/config.toml"
+      - "scripts/db-push.mjs"
       - ".github/workflows/deploy-migrations.yml"
   workflow_dispatch:
 
@@ -22,17 +27,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      PROJECT_ID: qgllfglrtwlvarafwxue
     steps:
       - uses: actions/checkout@v4
 
-      - uses: supabase/setup-cli@v1
+      - uses: actions/setup-node@v4
         with:
-          version: latest
+          node-version: 22
+          cache: npm
 
-      - name: Link project
-        run: supabase link --project-ref "$PROJECT_ID"
+      - run: npm ci
 
-      - name: Push migrations
-        run: supabase db push
+      - name: Apply pending migrations
+        run: node scripts/db-push.mjs --apply
