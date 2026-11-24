@@ -30,7 +30,8 @@ function query(args) {
   );
   const result = JSON.parse(out);
   if (result.error) throw new Error(result.error.message ?? JSON.stringify(result.error));
-  return result.rows ?? [];
+  if (!Array.isArray(result.rows)) throw new Error(`Unexpected answer from supabase db query: ${out}`);
+  return result.rows;
 }
 
 const [{ exists }] = query([
