@@ -1,5 +1,14 @@
 # Supabase sync setup
 
+> **Production now runs in the owner's shared Supabase project** (`project-hub`,
+> ref `rgwyvoatqhkvejgeewqi`), in the `brainwash` schema. Steps 1 and 4 below describe
+> the original single-app setup. Today: the schema is created by `npm run db:push --
+> --apply` (or the GitHub workflow), `brainwash` must be listed under **Project
+> Settings → Data API → Exposed schemas**, and the redirect URL
+> `https://brainwash.sluiba.com/**` must be allowed. Never use `supabase db push`
+> against the shared project. See CLAUDE.md, "Supabase + CI migrations".
+
+
 The app works fully **local-first** with no Supabase. Cloud sync + magic-link
 sign-in stay dormant until you add project keys. Follow these steps once to turn
 them on.

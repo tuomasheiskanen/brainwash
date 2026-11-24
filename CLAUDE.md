@@ -86,10 +86,21 @@ Bottom tab bar (`TabBar.tsx`), 4 tabs: **Today · Alcohol · Exercise · Trends*
 - Schema in `supabase/migrations/*.sql`. Tables: `day_entries`, `exercises`
   (both RLS "own rows" only; anon can read schema but rows are hidden and writes
   rejected). Per-day exercise sets are a `day_entries.exercise_sets jsonb` column.
+- **Shared Supabase project.** Since 2026-11-24 production is the owner's shared
+  project `project-hub` (ref `rgwyvoatqhkvejgeewqi`, eu-west-1), which hosts several
+  personal apps, one Postgres schema each. Brainwash owns only the `brainwash` schema
+  (listed under Data API → Exposed schemas) and never touches another schema. The
+  client sets `db: { schema: BRAINWASH_SCHEMA }` (`src/lib/supabase.ts`); migrations
+  name tables `brainwash.`, never `public.`. `auth.users` is shared, and the project
+  allows no new sign-ups: a new account must be created by hand in the dashboard.
+  The old project `qgllfglrtwlvarafwxue` is retired.
 - **Migrations auto-deploy via GitHub Actions** (`.github/workflows/
   deploy-migrations.yml`) on push to `main` that touches `supabase/migrations/**`.
-  Needs repo secrets `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` (already set).
-  Project ref: `qgllfglrtwlvarafwxue` (in `supabase/config.toml`).
+  It runs `scripts/db-push.mjs --apply`, which keeps Brainwash's own history in
+  `brainwash.schema_migrations`. Needs repo secret `SUPABASE_ACCESS_TOKEN` only.
+  Locally: `npm run db:push` lists pending migrations, `-- --apply` applies them.
+  **Never run `supabase link`, `supabase db push` or `supabase db reset --linked`
+  against the shared project**: its CLI migration history belongs to the project hub.
 - **Migration-first rule:** when a code change depends on new columns, ship the
   migration in its **own commit first**, confirm the Actions run is green, then
   push the code — so the app never writes a column that doesn't exist yet.
