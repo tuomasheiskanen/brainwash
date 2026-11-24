@@ -28,9 +28,13 @@ function query(args) {
     ["supabase", "db", "query", `--remote=${PROJECT_REF}`, "--output-format", "json", ...args],
     { encoding: "utf8", stdio: ["ignore", "pipe", "inherit"] },
   );
+  // Run by a person or in CI the CLI prints the rows as a plain array; inside
+  // an AI agent session it wraps them as { rows, boundary, warning }.
   const result = JSON.parse(out);
+  if (Array.isArray(result)) return result;
   if (result.error) throw new Error(result.error.message ?? JSON.stringify(result.error));
-  return result.rows ?? [];
+  if (!Array.isArray(result.rows)) throw new Error(`Unexpected answer from supabase db query: ${out}`);
+  return result.rows;
 }
 
 const [{ exists }] = query([
