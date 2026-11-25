@@ -93,7 +93,7 @@ Bottom tab bar (`TabBar.tsx`), 4 tabs: **Today · Alcohol · Exercise · Trends*
   client sets `db: { schema: BRAINWASH_SCHEMA }` (`src/lib/supabase.ts`); migrations
   name tables `brainwash.`, never `public.`. `auth.users` is shared, and the project
   allows no new sign-ups: a new account must be created by hand in the dashboard.
-  The old project `qgllfglrtwlvarafwxue` is retired.
+  The old project `qgllfglrtwlvarafwxue` was deleted on 2026-11-25.
 - **Migrations auto-deploy via GitHub Actions** (`.github/workflows/
   deploy-migrations.yml`) on push to `main` that touches `supabase/migrations/**`.
   It runs `scripts/db-push.mjs --apply`, which keeps Brainwash's own history in
